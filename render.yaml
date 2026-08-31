@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: quiz-live
+    name: eme-pmt-quiz
     runtime: node
     plan: free
     buildCommand: npm install
