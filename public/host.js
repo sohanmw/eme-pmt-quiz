@@ -249,6 +249,15 @@ function renderQuestionList() {
       : `${questions.length} question${questions.length === 1 ? '' : 's'} configured`;
   }
 
+  const kpiQEl = document.getElementById('kpiTotalQuestions');
+  if (kpiQEl) kpiQEl.textContent = String(questions.length);
+
+  const titleVal = document.getElementById('quizTitle')?.value?.trim() || 'Untitled Session';
+  const ovTitle = document.getElementById('overviewActiveTitle');
+  const ovSub = document.getElementById('overviewActiveSubtitle');
+  if (ovTitle) ovTitle.textContent = titleVal;
+  if (ovSub) ovSub.textContent = `${questions.length} question${questions.length === 1 ? '' : 's'} loaded in memory · Ready to present`;
+
   // If no questions exist, render inviting empty state card
   if (questions.length === 0) {
     const emptyCard = document.createElement('div');
@@ -741,97 +750,252 @@ async function deleteDeckFromDisk(id) {
   } catch (e) {}
 }
 
-async function renderLibraryList() {
-  if (!libraryContainer) return;
-  libraryContainer.innerHTML = '<p class="muted" style="text-align:center; padding:16px;">Loading saved quizzes from your Mac…</p>';
-  const decks = await fetchLibraryDecks();
-  libraryContainer.innerHTML = '';
+// ---------------------------------------------------------------------
+// Enterprise Admin Dashboard & Deck Management System
+// ---------------------------------------------------------------------
+let allSavedDecks = [];
 
-  if (decks.length === 0) {
-    libraryContainer.innerHTML = `
-      <div style="text-align:center; padding:32px 16px; border:1px dashed var(--border-subtle); border-radius:var(--radius-md);">
-        <p class="muted" style="margin:0 0 10px;">No saved quizzes on your Mac yet.</p>
-        <span style="font-size:12px; color:var(--text-muted);">Create questions and click "Save Quiz to Mac" to store them on your laptop.</span>
-      </div>
-    `;
-    return;
+async function renderAdminDecks(searchQuery = '') {
+  allSavedDecks = await fetchLibraryDecks();
+  
+  // 1. Update KPI Counters
+  const kpiDecks = document.getElementById('kpiTotalDecks');
+  const badgeDecks = document.getElementById('tabDeckCountBadge');
+  if (kpiDecks) kpiDecks.textContent = String(allSavedDecks.length);
+  if (badgeDecks) badgeDecks.textContent = String(allSavedDecks.length);
+
+  // 2. Render Overview Quick Launch Grid (Top 3 decks)
+  const overviewGrid = document.getElementById('overviewRecentDecksGrid');
+  if (overviewGrid) {
+    overviewGrid.innerHTML = '';
+    const recent3 = allSavedDecks.slice(0, 3);
+    if (recent3.length === 0) {
+      overviewGrid.innerHTML = `
+        <div class="card" style="grid-column:1/-1; padding:24px; text-align:center; color:var(--text-muted); font-size:13px;">
+          No saved quizzes on your Mac yet. Create a quiz in the Studio or import a spreadsheet.
+        </div>
+      `;
+    } else {
+      recent3.forEach((deck) => {
+        const card = createQuizDeckCard(deck);
+        overviewGrid.appendChild(card);
+      });
+    }
   }
 
-  decks.forEach((deck) => {
-    const item = document.createElement('div');
-    item.className = 'library-item';
-    const dateLabel = deck.dateStr || (deck.updatedAt ? new Date(deck.updatedAt).toLocaleDateString() : 'Saved on Mac');
-    const qCount = deck.questionCount || (deck.questions ? deck.questions.length : 0);
+  // 3. Render All Quizzes Grid (with search filter)
+  const allGrid = document.getElementById('allQuizzesGrid');
+  if (allGrid) {
+    allGrid.innerHTML = '';
+    const filtered = allSavedDecks.filter((d) =>
+      !searchQuery || d.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
-    item.innerHTML = `
-      <div>
-        <div class="library-item-title">${deck.title}</div>
-        <div class="library-item-meta">${qCount} questions · ${dateLabel}</div>
-      </div>
-      <div class="row" style="gap:8px;">
-        <button type="button" class="btn" style="padding:6px 12px; font-size:12px;" data-load-id="${deck.id}">Load</button>
-        <button type="button" class="btn danger" style="padding:6px 10px; font-size:12px;" data-delete-id="${deck.id}">✕</button>
-      </div>
-    `;
-    libraryContainer.appendChild(item);
-  });
-
-  libraryContainer.querySelectorAll('[data-load-id]').forEach((btn) => {
-    btn.onclick = () => {
-      const deck = decks.find((d) => d.id === btn.dataset.loadId);
-      if (deck) {
-        document.getElementById('quizTitle').value = deck.title;
-        questions = (deck.questions || []).map((q) => ({
-          id: ++qid,
-          type: q.type,
-          text: q.text,
-          image: q.image || null,
-          isDoublePoints: !!q.isDoublePoints,
-          options: q.options.map((o) => ({ text: o.text })),
-          correctIndex: q.correctIndex,
-          seconds: q.seconds,
-        }));
-        renderQuestionList();
-        libraryModal.style.display = 'none';
-      }
-    };
-  });
-
-  libraryContainer.querySelectorAll('[data-delete-id]').forEach((btn) => {
-    btn.onclick = async () => {
-      if (confirm('Delete this quiz file from your Mac?')) {
-        await deleteDeckFromDisk(btn.dataset.deleteId);
-        await renderLibraryList();
-      }
-    };
-  });
+    if (filtered.length === 0) {
+      allGrid.innerHTML = `
+        <div class="card" style="grid-column:1/-1; padding:32px; text-align:center; color:var(--text-muted); font-size:13px;">
+          ${searchQuery ? `No quizzes matching "${searchQuery}".` : 'No saved quizzes yet.'}
+        </div>
+      `;
+    } else {
+      filtered.forEach((deck) => {
+        const card = createQuizDeckCard(deck);
+        allGrid.appendChild(card);
+      });
+    }
+  }
 }
 
-document.getElementById('btnOpenLibrary').onclick = () => {
-  renderLibraryList();
-  libraryModal.style.display = 'flex';
-};
-document.getElementById('btnCloseLibrary').onclick = () => {
-  libraryModal.style.display = 'none';
-};
+function createQuizDeckCard(deck) {
+  const card = document.createElement('div');
+  card.className = 'quiz-card';
+  const qCount = deck.questionCount || (deck.questions ? deck.questions.length : 0);
+  const dateStr = deck.dateStr || (deck.updatedAt ? new Date(deck.updatedAt).toLocaleDateString() : 'Saved on Mac');
 
-document.getElementById('btnSaveCurrentToLibrary').onclick = async () => {
-  if (questions.length === 0) {
-    alert('Please add at least one question before saving to your Mac.');
-    return;
+  card.innerHTML = `
+    <div>
+      <div class="quiz-card-title">${deck.title}</div>
+      <div class="quiz-card-meta">
+        <span class="pill" style="font-size:11px; padding:2px 8px;">${qCount} Questions</span>
+        <span>·</span>
+        <span>${dateStr}</span>
+      </div>
+    </div>
+    <div class="row between" style="gap:8px; margin-top:8px;">
+      <button class="btn primary" style="flex:1; padding:8px 12px; font-size:13px;" data-launch-deck="${deck.id}">
+        Launch ▶
+      </button>
+      <button class="btn secondary" style="padding:8px 12px; font-size:12px;" data-edit-deck="${deck.id}">
+        Edit
+      </button>
+      <button class="btn danger" style="padding:8px 10px; font-size:12px;" data-delete-deck="${deck.id}">
+        ✕
+      </button>
+    </div>
+  `;
+
+  // Launch direct
+  const btnLaunch = card.querySelector('[data-launch-deck]');
+  if (btnLaunch) {
+    btnLaunch.onclick = () => loadDeckIntoSession(deck, true);
   }
-  const title = document.getElementById('quizTitle').value.trim() || 'Untitled Session';
-  const saveBtn = document.getElementById('btnSaveCurrentToLibrary');
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving to Mac…';
 
-  await saveDeckToDisk(title, questions);
+  // Edit in studio
+  const btnEdit = card.querySelector('[data-edit-deck]');
+  if (btnEdit) {
+    btnEdit.onclick = () => {
+      loadDeckIntoSession(deck, false);
+      switchAdminTab('studio');
+    };
+  }
 
-  saveBtn.disabled = false;
-  const diskSvg = window.Icons ? window.Icons.disk(14) : '';
-  saveBtn.innerHTML = `<span id="saveQuizIcon">${diskSvg}</span> Save Quiz to Mac`;
-  await renderLibraryList();
-};
+  // Delete from Mac
+  const btnDel = card.querySelector('[data-delete-deck]');
+  if (btnDel) {
+    btnDel.onclick = async () => {
+      if (confirm(`Delete "${deck.title}" from your Mac?`)) {
+        await deleteDeckFromDisk(deck.id);
+        await renderAdminDecks(document.getElementById('quizSearchInput')?.value || '');
+      }
+    };
+  }
+
+  return card;
+}
+
+function loadDeckIntoSession(deck, autoStart = false) {
+  document.getElementById('quizTitle').value = deck.title;
+  questions = (deck.questions || []).map((q) => ({
+    id: ++qid,
+    type: q.type,
+    text: q.text,
+    image: q.image || null,
+    isDoublePoints: !!q.isDoublePoints,
+    options: q.options.map((o) => ({ text: o.text })),
+    correctIndex: q.correctIndex,
+    seconds: q.seconds || 20,
+  }));
+  renderQuestionList();
+
+  if (autoStart) {
+    const launchBtn = document.getElementById('createGame');
+    if (launchBtn) launchBtn.click();
+  }
+}
+
+function switchAdminTab(tabName) {
+  document.querySelectorAll('.admin-nav-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+  document.querySelectorAll('.admin-tab-pane').forEach((pane) => {
+    pane.classList.toggle('active', pane.id === `pane-${tabName}`);
+  });
+
+  if (tabName === 'overview' || tabName === 'quizzes') {
+    renderAdminDecks();
+  }
+}
+
+function initAdminDashboard() {
+  // 1. Populate Vector SVG Icons across Admin Tabs & KPI Boxes
+  if (window.Icons) {
+    const setIcon = (id, iconSvg) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = iconSvg;
+    };
+    setIcon('tabIconOverview', window.Icons.grid(15));
+    setIcon('tabIconQuizzes', window.Icons.layers(15));
+    setIcon('tabIconStudio', window.Icons.edit(15));
+    setIcon('tabIconReports', window.Icons.chart(15));
+    setIcon('tabIconSettings', window.Icons.gear(15));
+
+    setIcon('kpiIconDecks', window.Icons.folder(22));
+    setIcon('kpiIconQuestions', window.Icons.fileText(22));
+    setIcon('kpiIconNetwork', window.Icons.zap(22));
+    setIcon('kpiIconReady', window.Icons.play(22));
+
+    setIcon('saveQuizIconStudio', window.Icons.disk(14));
+  }
+
+  // 2. Tab Navigation Listeners
+  document.querySelectorAll('.admin-nav-btn').forEach((btn) => {
+    btn.onclick = () => switchAdminTab(btn.dataset.tab);
+  });
+
+  // 3. Overview Actions
+  const btnOvStudio = document.getElementById('btnOverviewOpenStudio');
+  if (btnOvStudio) btnOvStudio.onclick = () => switchAdminTab('studio');
+
+  const btnOvLaunch = document.getElementById('btnOverviewLaunch');
+  if (btnOvLaunch) {
+    btnOvLaunch.onclick = () => {
+      const launchBtn = document.getElementById('createGame');
+      if (launchBtn) launchBtn.click();
+    };
+  }
+
+  const btnOvAll = document.getElementById('btnOverviewViewAllQuizzes');
+  if (btnOvAll) btnOvAll.onclick = () => switchAdminTab('quizzes');
+
+  // 4. Quizzes Tab Actions
+  const btnNewQuiz = document.getElementById('btnQuizzesCreateNew');
+  if (btnNewQuiz) {
+    btnNewQuiz.onclick = () => {
+      questions = [];
+      document.getElementById('quizTitle').value = '';
+      renderQuestionList();
+      switchAdminTab('studio');
+    };
+  }
+
+  const btnQuizzesCsv = document.getElementById('btnQuizzesImportCsv');
+  if (btnQuizzesCsv) btnQuizzesCsv.onclick = openCsvModal;
+
+  const searchInput = document.getElementById('quizSearchInput');
+  if (searchInput) {
+    searchInput.oninput = (e) => renderAdminDecks(e.target.value.trim());
+  }
+
+  // 5. Studio Save Action
+  const btnSaveStudio = document.getElementById('btnSaveCurrentToMac');
+  if (btnSaveStudio) {
+    btnSaveStudio.onclick = async () => {
+      if (questions.length === 0) {
+        alert('Please add at least one question before saving.');
+        return;
+      }
+      const title = document.getElementById('quizTitle').value.trim() || 'Untitled Session';
+      btnSaveStudio.disabled = true;
+      btnSaveStudio.textContent = 'Saving…';
+
+      await saveDeckToDisk(title, questions);
+
+      btnSaveStudio.disabled = false;
+      const diskSvg = window.Icons ? window.Icons.disk(14) : '';
+      btnSaveStudio.innerHTML = `<span id="saveQuizIconStudio">${diskSvg}</span> Save Quiz to Mac`;
+      await renderAdminDecks();
+      alert(`Quiz "${title}" successfully saved to your Mac.`);
+    };
+  }
+
+  // 6. Settings Copy Tunnel
+  const btnCopyTunnel = document.getElementById('btnCopySettingsTunnel');
+  if (btnCopyTunnel) {
+    btnCopyTunnel.onclick = () => {
+      const input = document.getElementById('settingsTunnelUrl');
+      if (input && input.value && input.value.startsWith('http')) {
+        navigator.clipboard.writeText(input.value);
+        btnCopyTunnel.textContent = 'Copied!';
+        setTimeout(() => { btnCopyTunnel.textContent = 'Copy Link'; }, 2000);
+      }
+    };
+  }
+
+  // Initial Decks Render
+  renderAdminDecks();
+}
+
+initAdminDashboard();
 
 // ---------------------------------------------------------------------
 // Cloudflare Tunnel Live Status Polling & Link Copying
@@ -848,6 +1012,9 @@ async function checkTunnelStatus() {
     if (data.ok && data.active && data.url) {
       const prevUrl = activePublicUrl;
       activePublicUrl = data.url;
+      const settingsTunnel = document.getElementById('settingsTunnelUrl');
+      if (settingsTunnel) settingsTunnel.value = data.url;
+
       if (badge && text) {
         badge.style.display = 'inline-flex';
         try {

@@ -36,25 +36,6 @@
   </div>
 </div>
 
-<!-- Saved Quiz Library Modal -->
-<div id="modalLibrary" class="modal-overlay" style="display:none;">
-  <div class="modal-card" style="max-width:520px;">
-    <div class="row between" style="margin-bottom:12px;">
-      <h3 style="margin:0; font-size:18px; font-weight:700;">My Mac Quiz Library</h3>
-      <button class="btn secondary" id="btnSaveCurrentToLibrary" style="font-size:12px; padding:6px 12px; display:inline-flex; align-items:center; gap:6px;">
-        <span id="saveQuizIcon"></span> Save Quiz to Mac
-      </button>
-    </div>
-    <p class="muted" style="margin:0 0 16px; font-size:13px;">Quizzes are stored directly as JSON files on your laptop hard drive.</p>
-    
-    <div class="library-list" id="libraryListContainer"></div>
-
-    <button class="btn secondary block" id="btnCloseLibrary" style="padding:12px;">
-      Close Library
-    </button>
-  </div>
-</div>
-
 <div class="wrap">
   <header class="brand">
     <div class="brand-left">
@@ -102,39 +83,168 @@
     </div>
   </section>
 
-  <!-- ============ SETUP ============ -->
+  <!-- ============ ENTERPRISE ADMIN DASHBOARD ============ -->
   <section id="screen-setup" class="screen">
-    <!-- Session Toolbar Card -->
-    <div class="builder-toolbar-card">
-      <div class="builder-toolbar-grid">
-        <div class="builder-toolbar-input-wrap">
-          <label class="q-label">Session Title</label>
-          <input type="text" id="quizTitle" placeholder="e.g. Digital Marketing & Growth Trivia" value="" style="font-size:15px; font-weight:600;">
+    <!-- Admin Navigation Tab Bar -->
+    <nav class="admin-navbar">
+      <button type="button" class="admin-nav-btn active" data-tab="overview" id="tabBtnOverview">
+        <span class="tab-icon" id="tabIconOverview"></span> Overview
+      </button>
+      <button type="button" class="admin-nav-btn" data-tab="quizzes" id="tabBtnQuizzes">
+        <span class="tab-icon" id="tabIconQuizzes"></span> My Quizzes (<span id="tabDeckCountBadge">0</span>)
+      </button>
+      <button type="button" class="admin-nav-btn" data-tab="studio" id="tabBtnStudio">
+        <span class="tab-icon" id="tabIconStudio"></span> Quiz Studio
+      </button>
+      <button type="button" class="admin-nav-btn" data-tab="reports" id="tabBtnReports">
+        <span class="tab-icon" id="tabIconReports"></span> Reports & Analytics
+      </button>
+      <button type="button" class="admin-nav-btn" data-tab="settings" id="tabBtnSettings">
+        <span class="tab-icon" id="tabIconSettings"></span> Settings
+      </button>
+    </nav>
+
+    <!-- ============ TAB 1: OVERVIEW ============ -->
+    <div class="admin-tab-pane active" id="pane-overview">
+      <!-- KPI Metric Cards -->
+      <div class="admin-kpi-grid">
+        <div class="kpi-box">
+          <div class="kpi-box-icon" id="kpiIconDecks"></div>
+          <div class="kpi-box-num" id="kpiTotalDecks">0</div>
+          <div class="kpi-box-label">Saved Quizzes on Mac</div>
         </div>
-        <div class="builder-toolbar-actions">
-          <button class="btn secondary" id="btnOpenLibrary">Library</button>
-          <button class="btn secondary" id="btnOpenCsvModal">Import Spreadsheet (CSV)</button>
-          <button class="btn secondary" id="btnSampleTrivia">Load Sample Trivia</button>
+        <div class="kpi-box">
+          <div class="kpi-box-icon" id="kpiIconQuestions"></div>
+          <div class="kpi-box-num" id="kpiTotalQuestions">0</div>
+          <div class="kpi-box-label">Questions in Active Session</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-box-icon" id="kpiIconNetwork"></div>
+          <div class="kpi-box-num" id="kpiNetworkStatus" style="font-size:20px; color:#34D399;">Online</div>
+          <div class="kpi-box-label">Public Cloudflare Tunnel</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-box-icon" id="kpiIconReady"></div>
+          <div class="kpi-box-num" style="color:#38BDF8; font-size:20px;">Ready</div>
+          <div class="kpi-box-label">Multiplayer Host Engine</div>
+        </div>
+      </div>
+
+      <!-- Quick Action Hero Card -->
+      <div class="card" style="padding:24px 28px; margin-bottom:24px; background:linear-gradient(135deg, rgba(99,102,241,0.08), rgba(56,189,248,0.04));">
+        <div class="row between" style="flex-wrap:wrap; gap:16px;">
+          <div>
+            <span class="pill active" style="margin-bottom:8px;">Active Staged Deck</span>
+            <h3 style="font-size:20px; font-weight:800; margin:4px 0;" id="overviewActiveTitle">Digital Marketing & Growth Trivia</h3>
+            <p class="muted" style="margin:0; font-size:13px;" id="overviewActiveSubtitle">0 questions loaded in memory · Ready to present</p>
+          </div>
+          <div class="row" style="gap:10px; flex-wrap:wrap;">
+            <button class="btn secondary" id="btnOverviewOpenStudio">Edit in Studio</button>
+            <button class="btn primary" id="btnOverviewLaunch" style="padding:12px 24px; font-size:15px;">Launch Live Session ▶</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions Grid -->
+      <div class="row between" style="margin-bottom:12px; align-items:center;">
+        <h3 style="font-size:16px; font-weight:700; margin:0;">Quick Deck Launcher</h3>
+        <button class="btn secondary" id="btnOverviewViewAllQuizzes" style="font-size:12px; padding:4px 10px;">View All Quizzes →</button>
+      </div>
+      <div class="quiz-grid" id="overviewRecentDecksGrid"></div>
+    </div>
+
+    <!-- ============ TAB 2: MY QUIZZES ============ -->
+    <div class="admin-tab-pane" id="pane-quizzes">
+      <div class="row between" style="flex-wrap:wrap; gap:12px; margin-bottom:16px; align-items:center;">
+        <div style="position:relative; flex:1; max-width:360px;">
+          <input type="text" id="quizSearchInput" placeholder="Search quizzes by title..." style="padding-left:14px; font-size:13px;">
+        </div>
+        <div class="row" style="gap:8px;">
+          <button class="btn secondary" id="btnQuizzesImportCsv">📥 Import Spreadsheet</button>
+          <button class="btn primary" id="btnQuizzesCreateNew">+ New Quiz</button>
+        </div>
+      </div>
+
+      <div class="quiz-grid" id="allQuizzesGrid"></div>
+    </div>
+
+    <!-- ============ TAB 3: QUIZ STUDIO ============ -->
+    <div class="admin-tab-pane" id="pane-studio">
+      <!-- Session Toolbar Card -->
+      <div class="builder-toolbar-card">
+        <div class="builder-toolbar-grid">
+          <div class="builder-toolbar-input-wrap">
+            <label class="q-label">Session Title</label>
+            <input type="text" id="quizTitle" placeholder="e.g. Digital Marketing & Growth Trivia" value="" style="font-size:15px; font-weight:600;">
+          </div>
+          <div class="builder-toolbar-actions">
+            <button class="btn secondary" id="btnSaveCurrentToMac" style="display:inline-flex; align-items:center; gap:6px;">
+              <span id="saveQuizIconStudio"></span> Save Quiz to Mac
+            </button>
+            <button class="btn secondary" id="btnOpenCsvModal">Import Spreadsheet</button>
+            <button class="btn secondary" id="btnSampleTrivia">Load Sample Trivia</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question List Container -->
+      <div id="questionList"></div>
+
+      <!-- Question Actions & Launch -->
+      <div class="row between" style="margin: 16px 0 24px; flex-wrap:wrap; gap:12px;">
+        <div class="row wrap-gap">
+          <button class="btn secondary" id="addMcq">+ Multiple Choice</button>
+          <button class="btn secondary" id="addTf">+ True / False</button>
+        </div>
+        <span class="muted" id="totalQuestionsCount" style="font-size:13px; font-weight:600;"></span>
+      </div>
+
+      <button class="btn block" id="createGame" style="font-size:16px; padding:16px;">
+        Launch Live Session
+      </button>
+      <p id="setupError" class="muted" style="color:var(--false-border); margin-top:10px; text-align:center; font-weight:600;"></p>
+    </div>
+
+    <!-- ============ TAB 4: REPORTS & ANALYTICS ============ -->
+    <div class="admin-tab-pane" id="pane-reports">
+      <div class="card" style="padding:24px 28px; margin-bottom:20px;">
+        <h3 style="font-size:18px; font-weight:800; margin:0 0 6px;">Live Session Performance & Analytics</h3>
+        <p class="muted" style="font-size:13px; margin:0 0 16px;">Review historical quiz accuracy rates, hardest questions, and download compliance CSV reports.</p>
+        
+        <div id="reportsHistoryPlaceholder" style="text-align:center; padding:32px 16px; color:var(--text-muted); font-size:13px;">
+          Session analytics and reports are automatically logged at the conclusion of each hosted live session.
         </div>
       </div>
     </div>
 
-    <!-- Question List Container -->
-    <div id="questionList"></div>
+    <!-- ============ TAB 5: SETTINGS ============ -->
+    <div class="admin-tab-pane" id="pane-settings">
+      <div class="card" style="padding:24px 28px; max-width:600px;">
+        <h3 style="font-size:18px; font-weight:800; margin:0 0 16px;">Admin & Session Defaults</h3>
+        
+        <div style="margin-bottom:20px;">
+          <label class="q-label">Host Account</label>
+          <input type="text" value="sohan@emarketingeye.com" readonly style="opacity:0.8; font-size:14px; width:100%;">
+        </div>
 
-    <!-- Question Actions & Launch -->
-    <div class="row between" style="margin: 16px 0 24px; flex-wrap:wrap; gap:12px;">
-      <div class="row wrap-gap">
-        <button class="btn secondary" id="addMcq">+ Multiple Choice</button>
-        <button class="btn secondary" id="addTf">+ True / False</button>
+        <div style="margin-bottom:20px;">
+          <label class="q-label">Cloudflare Tunnel Public Host Link</label>
+          <div class="row" style="gap:8px;">
+            <input type="text" id="settingsTunnelUrl" readonly value="Detecting public URL..." style="font-size:13px; flex:1;">
+            <button class="btn secondary" id="btnCopySettingsTunnel">Copy Link</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label class="q-label">Default Question Timer (Seconds)</label>
+          <select id="settingsDefaultTime" style="width:100%; font-size:14px; padding:10px 14px;">
+            <option value="10">10 Seconds (Fast paced)</option>
+            <option value="20" selected>20 Seconds (Standard)</option>
+            <option value="30">30 Seconds (Extended)</option>
+          </select>
+        </div>
       </div>
-      <span class="muted" id="totalQuestionsCount" style="font-size:13px; font-weight:600;"></span>
     </div>
-
-    <button class="btn block" id="createGame" style="font-size:16px; padding:16px;">
-      Launch Live Session
-    </button>
-    <p id="setupError" class="muted" style="color:var(--false-border); margin-top:10px; text-align:center; font-weight:600;"></p>
   </section>
 
   <!-- ============ CSV / SPREADSHEET IMPORT MODAL ============ -->
