@@ -1167,7 +1167,6 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
         <span class="avatar-badge-sm">${avatarSvg}</span>
         <span>${p.name}</span>
         ${p.streak >= 2 ? `<span class="streak-badge">${flameIcon} Streak ${p.streak}</span>` : ''}
-        ${p.lastMsTaken ? `<span class="pill" style="font-size:11px; padding:2px 7px; color:#38BDF8; font-weight:700; background:rgba(56,189,248,0.1); border-color:rgba(56,189,248,0.25);">⚡ ${(p.lastMsTaken / 1000).toFixed(2)}s</span>` : ''}
       </div>
       <div><strong>${p.score}</strong> <span class="muted" style="font-size:12px;">PTS</span></div>
     `;
