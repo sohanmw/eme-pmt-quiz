@@ -1537,35 +1537,53 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
     bars.appendChild(wrapper);
   }
 
-  // Next button leads to the Scoreboard screen
+  // Next button: on last question, leads directly to Grand Podium; otherwise, to animated scoreboard
   const btnScoreboard = document.getElementById('btnGoToScoreboard');
   if (btnScoreboard) {
     const isLastQ = currentQuestionIndex + 1 >= totalQuestionsCount;
-    btnScoreboard.textContent = isLastQ ? 'View Final Standings ➔' : 'View Scoreboard ➔';
-    btnScoreboard.onclick = () => showAnimatedScoreboard(leaderboard);
+    if (isLastQ) {
+      btnScoreboard.textContent = 'Reveal Grand Podium ➔';
+      btnScoreboard.onclick = () => {
+        if (currentPin) socket.emit('host:next', { pin: currentPin });
+      };
+    } else {
+      btnScoreboard.textContent = 'View Scoreboard ➔';
+      btnScoreboard.onclick = () => showAnimatedScoreboard(leaderboard);
+    }
   }
 });
 
 // ---------------------------------------------------------------------
-// SCREEN 2: Live Animated Top 10 Scoreboard
+// SCREEN 2: Live Animated Top 10 Scoreboard (FLIP Rank Shift Animation)
 // ---------------------------------------------------------------------
 function showAnimatedScoreboard(leaderboard) {
   showScreen('scoreboard');
   const counter = document.getElementById('scoreboardRoundCounter');
   if (counter) counter.textContent = `Question ${currentQuestionIndex + 1} / ${totalQuestionsCount}`;
 
-  const top10 = leaderboard.slice(0, 10);
+  const top10New = leaderboard.slice(0, 10);
   const ol = document.getElementById('revealLeaderboard');
   ol.innerHTML = '';
 
-  top10.forEach((p, idx) => {
-    const prev = prevLeaderboardMap.get(p.id) || { score: 0, rank: idx + 1 };
+  // 1. Initial State: Render in PREVIOUS rank order so the user sees scores increment first
+  const displayList = [...top10New].sort((a, b) => {
+    const prevA = prevLeaderboardMap.get(a.id)?.rank || 999;
+    const prevB = prevLeaderboardMap.get(b.id)?.rank || 999;
+    return prevA - prevB;
+  });
+
+  const itemInfoMap = new Map();
+
+  displayList.forEach((p, initialIdx) => {
+    const prev = prevLeaderboardMap.get(p.id) || { score: 0, rank: initialIdx + 1 };
     const gained = p.score - prev.score;
-    const rankDiff = prev.rank - (idx + 1);
+    const newRank = leaderboard.findIndex((x) => x.id === p.id) + 1;
+    const rankDiff = prev.rank - newRank;
 
     const li = document.createElement('li');
-    li.className = `scoreboard-item rank-${idx + 1}`;
+    li.className = `scoreboard-item ${prev.rank === 1 ? 'rank-1' : ''}`;
     li.dataset.playerId = p.id;
+    li.id = `sbItem_${p.id}`;
 
     const avatarSvg = window.Avatars ? window.Avatars.getSvg(p.avatar || 'cyber_bot', 28) : '';
     const flameIcon = p.streak >= 2 && window.Icons ? window.Icons.flame(12) : '';
@@ -1585,34 +1603,88 @@ function showAnimatedScoreboard(leaderboard) {
     `;
     ol.appendChild(li);
 
-    // Trigger score count up and rank shift indicators
-    setTimeout(() => {
-      const scoreNum = document.getElementById(`scoreNum_${p.id}`);
-      if (scoreNum && gained > 0) {
-        animateScoreCount(scoreNum, prev.score, p.score, 700);
+    itemInfoMap.set(p.id, {
+      prevScore: prev.score,
+      newScore: p.score,
+      gained,
+      prevRank: prev.rank,
+      newRank,
+      rankDiff,
+    });
+  });
+
+  // Phase 1: Animate score tickers
+  displayList.forEach((p, idx) => {
+    const info = itemInfoMap.get(p.id);
+    if (info && info.gained > 0) {
+      setTimeout(() => {
+        const scoreNum = document.getElementById(`scoreNum_${p.id}`);
+        if (scoreNum) animateScoreCount(scoreNum, info.prevScore, info.newScore, 650);
+      }, 250 + idx * 50);
+    }
+  });
+
+  // Phase 2: After scores update (~850ms), execute physical FLIP slide animation
+  setTimeout(() => {
+    // Step A: Record initial bounding positions (First)
+    const firstPositions = new Map();
+    ol.querySelectorAll('.scoreboard-item').forEach((el) => {
+      firstPositions.set(el.id, el.getBoundingClientRect().top);
+    });
+
+    // Step B: Reorder DOM elements according to new ranks (Last)
+    top10New.forEach((p, newIdx) => {
+      const el = document.getElementById(`sbItem_${p.id}`);
+      if (el) {
+        ol.appendChild(el);
+        el.className = `scoreboard-item ${newIdx === 0 ? 'rank-1' : ''}`;
+      }
+    });
+
+    // Step C: Invert and Play FLIP animation
+    top10New.forEach((p, newIdx) => {
+      const el = document.getElementById(`sbItem_${p.id}`);
+      const info = itemInfoMap.get(p.id);
+      if (!el || !info) return;
+
+      const firstTop = firstPositions.get(el.id) || 0;
+      const lastTop = el.getBoundingClientRect().top;
+      const deltaY = firstTop - lastTop;
+
+      if (deltaY !== 0) {
+        // Invert
+        el.style.transform = `translateY(${deltaY}px)`;
+        el.style.transition = 'none';
+        el.offsetHeight; // Force reflow
+
+        // Play
+        el.style.transition = 'transform 0.85s cubic-bezier(0.34, 1.35, 0.64, 1)';
+        el.style.transform = 'translateY(0)';
       }
 
+      // Update rank badge and shift badge
       const rankBadge = document.getElementById(`rankBadge_${p.id}`);
-      if (rankBadge) rankBadge.textContent = `#${idx + 1}`;
+      if (rankBadge) rankBadge.textContent = `#${newIdx + 1}`;
 
       const rankShift = document.getElementById(`rankShiftBadge_${p.id}`);
-      if (rankShift) {
-        if (rankDiff > 0) {
+      if (rankShift && info.rankDiff !== 0) {
+        if (info.rankDiff > 0) {
           rankShift.className = 'rank-shift up';
-          rankShift.innerHTML = `▲ +${rankDiff}`;
-        } else if (rankDiff < 0) {
+          rankShift.innerHTML = `▲ +${info.rankDiff}`;
+          if (window.QuizAudio && info.rankDiff >= 2) window.QuizAudio.playTick(1.2);
+        } else {
           rankShift.className = 'rank-shift down';
-          rankShift.innerHTML = `▼ ${Math.abs(rankDiff)}`;
+          rankShift.innerHTML = `▼ ${Math.abs(info.rankDiff)}`;
         }
       }
-    }, 350 + idx * 70);
-  });
+    });
 
-  // Save current leaderboard state for next round's delta animation
-  prevLeaderboardMap.clear();
-  leaderboard.forEach((p, idx) => {
-    prevLeaderboardMap.set(p.id, { score: p.score, rank: idx + 1 });
-  });
+    // Save current leaderboard state for next round's delta animation
+    prevLeaderboardMap.clear();
+    leaderboard.forEach((p, idx) => {
+      prevLeaderboardMap.set(p.id, { score: p.score, rank: idx + 1 });
+    });
+  }, 900);
 
   const nextBtn = document.getElementById('nextQuestion');
   if (nextBtn) {
@@ -1639,114 +1711,185 @@ document.getElementById('nextQuestion').onclick = () => {
 };
 
 // ---------------------------------------------------------------------
-// FINAL SCREEN: Top 3 on Podium + Ranks 4-10 in List + Analytics
+// FINAL SCREEN: Staged 3-Step Spotlight Podium (3rd ➔ 2nd ➔ 1st)
 // ---------------------------------------------------------------------
 socket.on('game:ended', ({ leaderboard, analytics }) => {
   latestSessionData = { leaderboard, analytics, date: new Date().toISOString() };
 
   if (hostTimerRaf) cancelAnimationFrame(hostTimerRaf);
-  if (window.QuizAudio) {
-    window.QuizAudio.stopAllMusic();
-    window.QuizAudio.playPodiumFanfare();
-  }
-  if (window.QuizConfetti) {
-    window.QuizConfetti.celebrate(4500);
-  }
+  if (window.QuizAudio) window.QuizAudio.stopAllMusic();
 
   showScreen('final');
 
-  // 1. Top 3 Podium
-  const podium = document.getElementById('podium');
-  podium.innerHTML = '';
+  const top1 = leaderboard[0];
+  const top2 = leaderboard[1];
+  const top3 = leaderboard[2];
 
-  const trophyIcon = window.Icons ? window.Icons.trophy(24) : '';
-  const medalIcon = window.Icons ? window.Icons.medal(22) : '';
+  // Render Spotlight Podium Grid Structure
+  const podiumGrid = document.getElementById('podiumGrid');
+  podiumGrid.innerHTML = `
+    <!-- Rank 2: Silver (Left) -->
+    <div class="podium-col rank-2" id="podiumCol2" style="order:1;">
+      <div class="podium-avatar-card">
+        <div class="avatar-badge-lg" style="width:58px; height:58px;">
+          ${top2 ? window.Avatars.getSvg(top2.avatar || 'cyber_bot', 54) : ''}
+        </div>
+        <div class="podium-player-name">${top2 ? top2.name : '—'}</div>
+        <div class="podium-player-score">${top2 ? top2.score + ' PTS' : '0 PTS'}</div>
+      </div>
+      <div class="podium-pedestal">
+        <span class="podium-rank-num">2</span>
+      </div>
+    </div>
 
-  const top3 = [
-    { p: leaderboard[1], place: 'silver', icon: medalIcon, label: '2nd' },
-    { p: leaderboard[0], place: 'gold', icon: trophyIcon, label: '1st' },
-    { p: leaderboard[2], place: 'bronze', icon: medalIcon, label: '3rd' },
-  ];
+    <!-- Rank 1: Gold Champion (Center) -->
+    <div class="podium-col rank-1" id="podiumCol1" style="order:2;">
+      <div class="podium-avatar-card">
+        <div class="podium-crown-badge">${window.Icons ? window.Icons.crown(28) : ''}</div>
+        <div class="avatar-badge-lg" style="width:68px; height:68px; box-shadow:0 0 24px rgba(245, 158, 11, 0.6); border:2px solid #FCD34D;">
+          ${top1 ? window.Avatars.getSvg(top1.avatar || 'astro_cat', 64) : ''}
+        </div>
+        <div class="podium-player-name" style="font-size:18px; font-weight:900; color:#FCD34D;">${top1 ? top1.name : '—'}</div>
+        <div class="podium-player-score" style="color:#FFFFFF; font-size:15px; font-weight:800;">${top1 ? top1.score + ' PTS' : '0 PTS'}</div>
+      </div>
+      <div class="podium-pedestal">
+        <span class="podium-rank-num">1</span>
+      </div>
+    </div>
 
-  top3.forEach(({ p, place, icon, label }) => {
-    if (!p) return;
-    const step = document.createElement('div');
-    step.className = `step ${place}`;
+    <!-- Rank 3: Bronze (Right) -->
+    <div class="podium-col rank-3" id="podiumCol3" style="order:3;">
+      <div class="podium-avatar-card">
+        <div class="avatar-badge-lg" style="width:54px; height:54px;">
+          ${top3 ? window.Avatars.getSvg(top3.avatar || 'turbo_fox', 50) : ''}
+        </div>
+        <div class="podium-player-name">${top3 ? top3.name : '—'}</div>
+        <div class="podium-player-score">${top3 ? top3.score + ' PTS' : '0 PTS'}</div>
+      </div>
+      <div class="podium-pedestal">
+        <span class="podium-rank-num">3</span>
+      </div>
+    </div>
+  `;
 
-    const avatarSvg = window.Avatars ? window.Avatars.getSvg(p.avatar || 'cyber_bot', 52) : '';
-
-    step.innerHTML = `
-      <div class="podium-avatar-wrap">${avatarSvg}</div>
-      <span class="name">${p.name}</span>
-      <span class="score">${p.score} pts</span>
-      <span class="pill" style="font-size:11px; padding:2px 8px;">${icon} ${label} Place</span>
-    `;
-    podium.appendChild(step);
-  });
-
-  // 2. Remaining Ranks #4 to #10
-  const runnerUps = leaderboard.slice(3, 10);
+  // Reset spotlights and finalists visibility
+  const spotBronze = document.getElementById('spotlightBronze');
+  const spotSilver = document.getElementById('spotlightSilver');
+  const spotGold = document.getElementById('spotlightGold');
   const runnerUpsSec = document.getElementById('finalRunnerUpsSection');
-  const ol = document.getElementById('finalLeaderboard');
-  ol.innerHTML = '';
-
-  if (runnerUps.length > 0) {
-    if (runnerUpsSec) runnerUpsSec.style.display = 'block';
-    runnerUps.forEach((p, idx) => {
-      const li = document.createElement('li');
-      const avatarSvg = window.Avatars ? window.Avatars.getSvg(p.avatar || 'cyber_bot', 28) : '';
-      const flameIcon = p.streak >= 2 && window.Icons ? window.Icons.flame(12) : '';
-
-      li.innerHTML = `
-        <div class="player-name">
-          <span class="rank" style="font-weight:700; color:var(--text-secondary);">#${idx + 4}</span>
-          <span class="avatar-badge-sm">${avatarSvg}</span>
-          <span>${p.name}</span>
-          ${p.streak >= 2 ? `<span class="streak-badge">${flameIcon} Streak ${p.streak}</span>` : ''}
-        </div>
-        <div><strong>${p.score}</strong> <span class="muted" style="font-size:12px;">PTS</span></div>
-      `;
-      ol.appendChild(li);
-    });
-  } else {
-    if (runnerUpsSec) runnerUpsSec.style.display = 'none';
-  }
-
-  // 3. Render Post-Session Analytics Grid Below Leaderboard
   const analyticsSec = document.getElementById('finalAnalyticsSection');
-  const analyticsGrid = document.getElementById('finalAnalyticsGrid');
-  if (analyticsSec && analyticsGrid && analytics) {
-    analyticsSec.style.display = 'block';
-    analyticsGrid.innerHTML = `
-      <div class="analytics-card">
-        <span class="analytics-card-label">Session Accuracy</span>
-        <div class="analytics-card-val" style="color:#34D399;">${analytics.overallAccuracy}%</div>
-        <span class="muted" style="font-size:11px;">${analytics.totalAnswers} total responses</span>
-      </div>
-      <div class="analytics-card">
-        <span class="analytics-card-label">Hardest Question</span>
-        <div class="analytics-card-val" style="font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${analytics.hardestQuestion ? analytics.hardestQuestion.text : 'N/A'}">
-          ${analytics.hardestQuestion ? `Q${analytics.hardestQuestion.index}: ${analytics.hardestQuestion.accuracy}% Correct` : 'N/A'}
-        </div>
-        <span class="muted" style="font-size:11px;">Lowest accuracy rate</span>
-      </div>
-      <div class="analytics-card">
-        <span class="analytics-card-label">Speed Demon</span>
-        <div class="analytics-card-val" style="font-size:16px; color:#38BDF8;">
-          ${analytics.fastestPlayer ? `${analytics.fastestPlayer.name} (${analytics.fastestPlayer.avgSeconds}s)` : 'N/A'}
-        </div>
-        <span class="muted" style="font-size:11px;">Fastest correct responses</span>
-      </div>
-      <div class="analytics-card">
-        <span class="analytics-card-label">Longest Streak</span>
-        <div class="analytics-card-val" style="font-size:16px; color:#FBBF24;">
-          ${analytics.longestStreakPlayer ? `${analytics.longestStreakPlayer.name} (${analytics.longestStreakPlayer.maxStreak} in a row)` : 'N/A'}
-        </div>
-        <span class="muted" style="font-size:11px;">Best consecutive streak</span>
-      </div>
-    `;
-  }
+
+  if (spotBronze) spotBronze.classList.remove('active');
+  if (spotSilver) spotSilver.classList.remove('active');
+  if (spotGold) spotGold.classList.remove('active');
+  if (runnerUpsSec) runnerUpsSec.style.opacity = '0';
+  if (analyticsSec) analyticsSec.style.opacity = '0';
+
+  // Dramatic 3-Stage Timeline Reveal (3rd ➔ 2nd ➔ 1st)
+  // Stage 1: 3rd Place Bronze (t = 600ms)
+  setTimeout(() => {
+    if (top3) {
+      const col3 = document.getElementById('podiumCol3');
+      if (col3) col3.classList.add('revealed');
+      if (spotBronze) spotBronze.classList.add('active');
+      if (window.QuizAudio) window.QuizAudio.playCorrect();
+    }
+  }, 600);
+
+  // Stage 2: 2nd Place Silver (t = 2400ms)
+  setTimeout(() => {
+    if (top2) {
+      const col2 = document.getElementById('podiumCol2');
+      if (col2) col2.classList.add('revealed');
+      if (spotSilver) spotSilver.classList.add('active');
+      if (window.QuizAudio) window.QuizAudio.playStreak(3);
+    }
+  }, 2400);
+
+  // Stage 3: 1st Place Gold Champion (t = 4400ms)
+  setTimeout(() => {
+    if (top1) {
+      const col1 = document.getElementById('podiumCol1');
+      if (col1) col1.classList.add('revealed');
+      if (spotGold) spotGold.classList.add('active');
+      if (window.QuizAudio) window.QuizAudio.playPodiumFanfare();
+      if (window.QuizConfetti) window.QuizConfetti.celebrate(5500);
+    }
+  }, 4400);
+
+  // Stage 4: Reveal Finalists (#4 to #10) & Session Analytics (t = 5600ms)
+  setTimeout(() => {
+    const runnerUps = leaderboard.slice(3, 10);
+    const finalOl = document.getElementById('finalLeaderboard');
+    if (finalOl) {
+      finalOl.innerHTML = '';
+      if (runnerUps.length > 0) {
+        runnerUps.forEach((p, idx) => {
+          const li = document.createElement('li');
+          li.className = 'scoreboard-item';
+          const avatarSvg = window.Avatars ? window.Avatars.getSvg(p.avatar || 'cyber_bot', 26) : '';
+          const flameIcon = p.streak >= 2 && window.Icons ? window.Icons.flame(12) : '';
+
+          li.innerHTML = `
+            <div class="scoreboard-left">
+              <span class="scoreboard-rank" style="font-weight:700;">#${idx + 4}</span>
+              <span class="avatar-badge-sm">${avatarSvg}</span>
+              <span class="scoreboard-name">${p.name}</span>
+              ${p.streak >= 2 ? `<span class="streak-badge">${flameIcon} Streak ${p.streak}</span>` : ''}
+            </div>
+            <div><strong class="score-num">${p.score}</strong> <span class="muted" style="font-size:12px;">PTS</span></div>
+          `;
+          finalOl.appendChild(li);
+        });
+      }
+    }
+    if (runnerUpsSec) runnerUpsSec.style.opacity = runnerUps.length > 0 ? '1' : '0';
+
+    if (analytics) {
+      const analyticsGrid = document.getElementById('finalAnalyticsGrid');
+      if (analyticsGrid) {
+        renderAnalyticsCards(analytics);
+        if (analyticsSec) {
+          analyticsSec.style.display = 'block';
+          analyticsSec.style.opacity = '1';
+        }
+      }
+    }
+  }, 5600);
 });
+
+function renderAnalyticsCards(analytics) {
+  const grid = document.getElementById('finalAnalyticsGrid');
+  if (!grid) return;
+  grid.innerHTML = `
+    <div class="analytics-card">
+      <span class="analytics-card-label">Session Accuracy</span>
+      <div class="analytics-card-val" style="color:#34D399;">${analytics.overallAccuracy || 0}%</div>
+      <span class="muted" style="font-size:11px;">${analytics.totalAnswers || 0} total responses</span>
+    </div>
+    <div class="analytics-card">
+      <span class="analytics-card-label">Hardest Question</span>
+      <div class="analytics-card-val" style="font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${analytics.hardestQuestion ? analytics.hardestQuestion.text : 'N/A'}">
+        ${analytics.hardestQuestion ? `Q${analytics.hardestQuestion.index}: ${analytics.hardestQuestion.accuracy}% Correct` : 'N/A'}
+      </div>
+      <span class="muted" style="font-size:11px;">Lowest accuracy rate</span>
+    </div>
+    <div class="analytics-card">
+      <span class="analytics-card-label">Speed Demon</span>
+      <div class="analytics-card-val" style="font-size:16px; color:#38BDF8;">
+        ${analytics.fastestPlayer ? `${analytics.fastestPlayer.name} (${analytics.fastestPlayer.avgSeconds}s)` : 'N/A'}
+      </div>
+      <span class="muted" style="font-size:11px;">Fastest correct responses</span>
+    </div>
+    <div class="analytics-card">
+      <span class="analytics-card-label">Longest Streak</span>
+      <div class="analytics-card-val" style="font-size:16px; color:#FBBF24;">
+        ${analytics.longestStreakPlayer ? `${analytics.longestStreakPlayer.name} (${analytics.longestStreakPlayer.maxStreak} in a row)` : 'N/A'}
+      </div>
+      <span class="muted" style="font-size:11px;">Best consecutive streak</span>
+    </div>
+  `;
+}
 
 // CSV Export Logic
 document.getElementById('btnDownloadCsv').onclick = () => {

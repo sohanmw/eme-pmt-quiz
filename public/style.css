@@ -1042,6 +1042,9 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
 /* =====================================================================
    LIVE ANIMATED SCOREBOARD (KAHOOT STYLE)
    ===================================================================== */
+/* =====================================================================
+   LIVE ANIMATED SCOREBOARD (KAHOOT STYLE WITH FLIP REORDERING)
+   ===================================================================== */
 .animated-scoreboard {
   display: flex;
   flex-direction: column;
@@ -1049,6 +1052,7 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   list-style: none;
   padding: 0;
   margin: 0;
+  position: relative;
 }
 
 .scoreboard-item {
@@ -1059,14 +1063,14 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   border-radius: var(--radius-md);
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  transition: transform 0.8s cubic-bezier(0.34, 1.25, 0.64, 1), background 0.4s ease, border-color 0.4s ease;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  will-change: transform;
 }
 
 .scoreboard-item.rank-1 {
   border-color: rgba(245, 158, 11, 0.5);
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), var(--bg-surface));
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.14), var(--bg-surface));
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.25);
 }
 
 .scoreboard-left {
@@ -1082,6 +1086,7 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   width: 28px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  transition: color 0.3s ease;
 }
 .scoreboard-item.rank-1 .scoreboard-rank { color: #FBBF24; }
 
@@ -1115,172 +1120,166 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   gap: 3px;
   font-size: 11px;
   font-weight: 800;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
+  animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .rank-shift.up {
   color: #34D399;
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
 }
 .rank-shift.down {
   color: #FB7185;
-  background: rgba(244, 63, 94, 0.15);
-  border: 1px solid rgba(244, 63, 94, 0.3);
+  background: rgba(244, 63, 94, 0.18);
+  border: 1px solid rgba(244, 63, 94, 0.4);
 }
 
-/* ---- Timer Bar ---- */
-.timer-bar {
-  height: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  margin: 16px 0 24px;
+/* =====================================================================
+   DRAMATIC STAGED SPOTLIGHT PODIUM (KAHOOT STYLE)
+   ===================================================================== */
+.podium-stage-container {
   position: relative;
-}
-.timer-bar > div {
-  height: 100%;
-  background: linear-gradient(90deg, #6366F1, #38BDF8);
   width: 100%;
-  transform-origin: left;
-  transition: width 0.1s linear;
-}
-.timer-bar.paused > div {
-  opacity: 0.5;
-  animation: pulseBar 1s infinite alternate;
-}
-@keyframes pulseBar {
-  0% { filter: brightness(1); }
-  100% { filter: brightness(1.3); }
-}
-
-/* ---- Question Stage & Media ---- */
-.stage-question {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.35;
-  margin: 8px 0 20px;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-}
-
-.question-media-wrap {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto 24px;
-  max-height: 280px;
-  border-radius: var(--radius-lg);
+  padding: 30px 10px 10px;
+  margin: 10px 0 24px;
   overflow: hidden;
-  background: var(--bg-surface-elevated);
+  background: radial-gradient(ellipse at 50% 100%, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.95) 75%);
+  border-radius: var(--radius-xl);
   border: 1px solid var(--border-subtle);
-}
-.question-media-wrap img {
-  max-width: 100%;
-  max-height: 280px;
-  object-fit: contain;
-  border-radius: var(--radius-lg);
+  box-shadow: inset 0 -20px 40px rgba(0,0,0,0.5);
 }
 
-/* ---- Enterprise Floating Control Dock ---- */
-.host-control-bar {
+.podium-spotlights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 10px 18px;
-  background: var(--bg-surface-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-muted);
-  border-radius: var(--radius-full);
-  margin-top: 28px;
-  box-shadow: var(--shadow-dock);
-}
-.host-control-bar .btn {
-  padding: 8px 16px;
-  font-size: 13px;
-  border-radius: var(--radius-full);
+  justify-content: space-around;
 }
 
-/* ---- Animated Leaderboard ---- */
-.leaderboard {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  position: relative;
-}
-.leaderboard li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 18px;
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  margin-bottom: 8px;
-  font-weight: 500;
-  font-size: 15px;
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
-  will-change: transform;
-}
-.leaderboard li.top-1 {
-  background: rgba(245, 158, 11, 0.06);
-  border-color: rgba(245, 158, 11, 0.3);
-}
-.leaderboard li .rank {
-  color: var(--text-muted);
-  width: 32px;
-  font-weight: 700;
-  font-size: 13px;
-}
-.leaderboard li .player-name {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
+.spotlight-cone {
+  width: 180px;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.8s ease-out;
 }
 
-/* ---- Modern Minimalist Podium ---- */
-.podium {
+.spotlight-cone.gold-beam {
+  background: radial-gradient(ellipse at 50% 0%, rgba(251, 191, 36, 0.35) 0%, rgba(251, 191, 36, 0.05) 55%, transparent 80%);
+}
+.spotlight-cone.silver-beam {
+  background: radial-gradient(ellipse at 50% 0%, rgba(148, 163, 184, 0.3) 0%, rgba(148, 163, 184, 0.04) 55%, transparent 80%);
+}
+.spotlight-cone.bronze-beam {
+  background: radial-gradient(ellipse at 50% 0%, rgba(217, 119, 6, 0.3) 0%, rgba(217, 119, 6, 0.04) 55%, transparent 80%);
+}
+
+.spotlight-cone.active {
+  opacity: 1;
+}
+
+.podium-grid {
   display: flex;
   align-items: flex-end;
-  gap: 16px;
   justify-content: center;
-  margin: 36px 0 28px;
+  gap: 20px;
+  min-height: 330px;
+  position: relative;
+  z-index: 2;
 }
-.podium .step {
-  width: 140px;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+
+.podium-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 12px;
-  gap: 6px;
-  box-shadow: var(--shadow-card);
+  width: 150px;
+  opacity: 0;
+  transform: translateY(60px);
+  transition: all 0.8s cubic-bezier(0.34, 1.25, 0.64, 1);
 }
-.podium .step .trophy { font-size: 28px; }
-.podium .step .name { font-weight: 700; font-size: 14px; text-align: center; color: var(--text-primary); }
-.podium .step .score { color: var(--text-secondary); font-size: 13px; font-weight: 500; }
-.podium .step.gold {
-  height: 200px;
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.12), var(--bg-surface));
-  border-color: rgba(245, 158, 11, 0.4);
-  order: 2;
+
+.podium-col.revealed {
+  opacity: 1;
+  transform: translateY(0);
 }
-.podium .step.silver {
-  height: 160px;
-  background: linear-gradient(180deg, rgba(148, 163, 184, 0.1), var(--bg-surface));
-  border-color: rgba(148, 163, 184, 0.3);
-  order: 1;
+
+.podium-avatar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+  text-align: center;
+  position: relative;
 }
-.podium .step.bronze {
-  height: 140px;
-  background: linear-gradient(180deg, rgba(217, 119, 6, 0.1), var(--bg-surface));
-  border-color: rgba(217, 119, 6, 0.3);
-  order: 3;
+
+.podium-crown-badge {
+  position: absolute;
+  top: -24px;
+  color: #FBBF24;
+  animation: floatUp 0.6s ease-out forwards;
+  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.8));
+}
+
+.podium-player-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-top: 8px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-player-score {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.podium-pedestal {
+  width: 100%;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 14px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 2px 8px rgba(255,255,255,0.35);
+}
+
+.podium-col.rank-1 .podium-pedestal {
+  height: 190px;
+  background: linear-gradient(180deg, #F59E0B 0%, #B45309 100%);
+  border: 1px solid #FCD34D;
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.45), inset 0 2px 10px rgba(255,255,255,0.5);
+}
+
+.podium-col.rank-2 .podium-pedestal {
+  height: 145px;
+  background: linear-gradient(180deg, #94A3B8 0%, #475569 100%);
+  border: 1px solid #CBD5E1;
+  box-shadow: 0 0 25px rgba(148, 163, 184, 0.35), inset 0 2px 8px rgba(255,255,255,0.4);
+}
+
+.podium-col.rank-3 .podium-pedestal {
+  height: 115px;
+  background: linear-gradient(180deg, #D97706 0%, #78350F 100%);
+  border: 1px solid #FBBF24;
+  box-shadow: 0 0 20px rgba(217, 119, 6, 0.35), inset 0 2px 8px rgba(255,255,255,0.3);
+}
+
+.podium-rank-num {
+  font-size: 42px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 /* ---- Floating Reactions Overlay ---- */

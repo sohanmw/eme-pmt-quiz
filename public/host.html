@@ -248,11 +248,18 @@
       <h2 style="font-size:28px; font-weight:800; margin:10px 0 0;" id="finalHeading">Final Standings</h2>
     </div>
     
-    <!-- Top 3 Podium -->
-    <div class="podium" id="podium"></div>
+    <!-- Top 3 Dramatic Spotlight Podium -->
+    <div class="podium-stage-container" id="podiumStageContainer">
+      <div class="podium-spotlights">
+        <div class="spotlight-cone silver-beam" id="spotlightSilver"></div>
+        <div class="spotlight-cone gold-beam" id="spotlightGold"></div>
+        <div class="spotlight-cone bronze-beam" id="spotlightBronze"></div>
+      </div>
+      <div class="podium-grid" id="podiumGrid"></div>
+    </div>
     
     <!-- Remaining Ranks #4 to #10 -->
-    <div id="finalRunnerUpsSection" style="margin-top:20px;">
+    <div id="finalRunnerUpsSection" style="margin-top:20px; opacity:0; transition:opacity 0.8s ease;">
       <h3 style="font-size:16px; font-weight:700; margin: 0 0 12px;">Top 10 Finalists (Ranks 4 – 10)</h3>
       <ol class="leaderboard" id="finalLeaderboard"></ol>
     </div>
