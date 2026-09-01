@@ -1476,6 +1476,7 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
     grid.className = `kahoot-bars-grid ${isTf ? 'tf-mode' : ''}`;
 
     const maxCount = Math.max(...counts, 1);
+    const hostFillTargets = [];
 
     currentQuestionMeta.options.forEach((text, i) => {
       const isCorrect = i === correctIndex;
@@ -1505,9 +1506,10 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
       const fill = document.createElement('div');
       const optClass = isTf ? (i === 0 ? 'tf-true' : 'tf-false') : OPT_CLASSES[i];
       fill.className = `kahoot-bar-fill ${optClass}`;
-      fill.style.height = `${fillHeightPct}%`;
+      fill.style.height = '0%'; // Start at 0, animate after DOM append
 
       track.appendChild(fill);
+      hostFillTargets.push({ fill, fillHeightPct });
 
       const footer = document.createElement('div');
       footer.className = `kahoot-bar-footer ${optClass}`;
@@ -1527,6 +1529,15 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
 
     wrapper.appendChild(grid);
     bars.appendChild(wrapper);
+
+    // Animate fills after DOM flush
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        hostFillTargets.forEach(({ fill, fillHeightPct }) => {
+          fill.style.height = `${fillHeightPct}%`;
+        });
+      });
+    });
   }
 
   // Next button leads to the Scoreboard screen

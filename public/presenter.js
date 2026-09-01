@@ -521,6 +521,8 @@
     const safeCounts = counts || new Array(options.length).fill(0);
     const maxCount = Math.max(...safeCounts, 1);
 
+    const fillTargets = [];
+
     options.forEach((text, i) => {
       const isCorrect = i === correctIndex;
       const count = safeCounts[i] || 0;
@@ -548,9 +550,10 @@
       const fill = document.createElement('div');
       const optClass = isTf ? (i === 0 ? 'tf-true' : 'tf-false') : OPT_CLASSES[i];
       fill.className = `kahoot-bar-fill ${optClass}`;
-      fill.style.height = `${fillHeightPct}%`;
+      fill.style.height = '0%'; // Start at 0, animate after DOM append
 
       track.appendChild(fill);
+      fillTargets.push({ fill, fillHeightPct });
 
       const footer = document.createElement('div');
       footer.className = `kahoot-bar-footer ${optClass}`;
@@ -570,6 +573,15 @@
 
     wrapper.appendChild(grid);
     container.appendChild(wrapper);
+
+    // Animate bars AFTER DOM is appended — two rAF frames ensures layout is flushed
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        fillTargets.forEach(({ fill, fillHeightPct }) => {
+          fill.style.height = `${fillHeightPct}%`;
+        });
+      });
+    });
 
     const btnGoScoreboard = document.getElementById('btnGoToScoreboard');
     if (btnGoScoreboard) {

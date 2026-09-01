@@ -58,7 +58,51 @@
   // ---------------------------------------------------------------------
   const authForm = document.getElementById('authForm');
   const authError = document.getElementById('authError');
+  const authErrorText = document.getElementById('authErrorText');
   const btnLogout = document.getElementById('btnLogout');
+  const btnTogglePassword = document.getElementById('btnTogglePassword');
+  const pwdToggleIcon = document.getElementById('pwdToggleIcon');
+  const authPasswordInput = document.getElementById('authPassword');
+  const btnQuickFillAuth = document.getElementById('btnQuickFillAuth');
+  const quickFillText = document.getElementById('quickFillText');
+  const btnAuthSubmit = document.getElementById('btnAuthSubmit');
+  const authSubmitSpinner = document.getElementById('authSubmitSpinner');
+  const authSubmitText = document.getElementById('authSubmitText');
+
+  // Password visibility toggle
+  if (btnTogglePassword && authPasswordInput) {
+    let pwdVisible = false;
+    btnTogglePassword.onclick = () => {
+      pwdVisible = !pwdVisible;
+      authPasswordInput.type = pwdVisible ? 'text' : 'password';
+      if (pwdToggleIcon) {
+        pwdToggleIcon.innerHTML = pwdVisible
+          ? (window.Icons ? window.Icons.eyeOff(16) : '🙈')
+          : (window.Icons ? window.Icons.eye(16) : '👁️');
+      }
+    };
+  }
+
+  // Quick Demo Credentials Autofill Pill
+  if (btnQuickFillAuth) {
+    btnQuickFillAuth.onclick = () => {
+      const emailInput = document.getElementById('authEmail');
+      if (emailInput) emailInput.value = 'admin@quizlive.com';
+      if (authPasswordInput) authPasswordInput.value = 'admin123';
+      if (quickFillText) {
+        const originalText = quickFillText.textContent;
+        quickFillText.textContent = '✓ Default Admin Credentials Loaded!';
+        btnQuickFillAuth.style.borderColor = '#10B981';
+        btnQuickFillAuth.style.color = '#34D399';
+        setTimeout(() => {
+          quickFillText.textContent = originalText;
+          btnQuickFillAuth.style.borderColor = '';
+          btnQuickFillAuth.style.color = '';
+        }, 1800);
+      }
+      if (authError) authError.style.display = 'none';
+    };
+  }
 
   if (authForm) {
     authForm.onsubmit = async (e) => {
@@ -66,7 +110,20 @@
       if (authError) authError.style.display = 'none';
 
       const email = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPassword').value;
+      const password = authPasswordInput ? authPasswordInput.value : '';
+
+      if (!email || !password) {
+        if (authError && authErrorText) {
+          authErrorText.textContent = 'Please enter both admin email and password.';
+          authError.style.display = 'flex';
+        }
+        return;
+      }
+
+      // Set loading state
+      if (btnAuthSubmit) btnAuthSubmit.disabled = true;
+      if (authSubmitSpinner) authSubmitSpinner.style.display = 'inline-block';
+      if (authSubmitText) authSubmitText.textContent = 'Verifying credentials…';
 
       try {
         const res = await fetch('/api/auth/login', {
@@ -80,16 +137,20 @@
           showView('dashboard');
           loadDashboard();
         } else {
-          if (authError) {
-            authError.textContent = data.error || 'Invalid credentials';
-            authError.style.display = 'block';
+          if (authError && authErrorText) {
+            authErrorText.textContent = data.error || 'Invalid admin email or password.';
+            authError.style.display = 'flex';
           }
         }
       } catch (err) {
-        if (authError) {
-          authError.textContent = 'Connection error. Please try again.';
-          authError.style.display = 'block';
+        if (authError && authErrorText) {
+          authErrorText.textContent = 'Connection error. Please try again.';
+          authError.style.display = 'flex';
         }
+      } finally {
+        if (btnAuthSubmit) btnAuthSubmit.disabled = false;
+        if (authSubmitSpinner) authSubmitSpinner.style.display = 'none';
+        if (authSubmitText) authSubmitText.textContent = 'Sign In to Dashboard';
       }
     };
   }

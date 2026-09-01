@@ -92,21 +92,6 @@
     transform: scale(1.03);
     box-shadow: 0 6px 18px rgba(16, 185, 129, 0.6) !important;
   }
-  .auth-wrap {
-    min-height: 85vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .auth-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-xl);
-    padding: 36px 32px;
-    max-width: 420px;
-    width: 100%;
-    box-shadow: var(--shadow-dock);
-  }
 </style>
 </head>
 <body>
@@ -115,32 +100,99 @@
 
   <!-- ==================== AUTH VIEW ==================== -->
   <div id="view-auth" class="auth-wrap" style="display:none;">
+    <!-- Ambient Floating Aurora Orbs -->
+    <div class="auth-ambient-orbs">
+      <div class="auth-orb auth-orb-1"></div>
+      <div class="auth-orb auth-orb-2"></div>
+      <div class="auth-orb auth-orb-3"></div>
+    </div>
+
     <div class="auth-card">
-      <div style="text-align:center; margin-bottom: 24px;">
-        <div id="authLockIconBox" style="width:48px; height:48px; background:linear-gradient(135deg,#38BDF8,#6366F1); border-radius:12px; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; color:#fff;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      <div class="auth-card-top-accent"></div>
+
+      <div class="auth-header">
+        <div class="auth-badge-shield">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Encrypted Host Terminal
         </div>
-        <h2 style="font-size:22px; font-weight:800; margin:0 0 6px;">Admin Access</h2>
-        <p class="muted" style="margin:0; font-size:13px;">Sign in to manage quizzes and host sessions.</p>
+
+        <div class="auth-icon-hero">
+          <div class="auth-icon-pulse"></div>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        </div>
+
+        <h2 class="auth-title">Quiz Live Admin</h2>
+        <p class="auth-subtitle">Sign in to manage quiz decks, configure questions, and launch interactive live sessions.</p>
       </div>
 
-      <form id="authForm">
-        <div style="margin-bottom:16px;">
-          <label class="q-label">Admin Email</label>
-          <input type="email" id="authEmail" value="admin@quizlive.com" required placeholder="admin@quizlive.com" style="font-size:14px;">
+      <form id="authForm" novalidate>
+        <div class="auth-field-group">
+          <div class="auth-label-row">
+            <label class="auth-label" for="authEmail">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              Admin Email
+            </label>
+          </div>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            </span>
+            <input type="email" id="authEmail" class="auth-input" value="admin@quizlive.com" required placeholder="admin@quizlive.com" autocomplete="username">
+          </div>
         </div>
 
-        <div style="margin-bottom:20px;">
-          <label class="q-label">Password</label>
-          <input type="password" id="authPassword" value="admin123" required placeholder="••••••••" style="font-size:14px;">
+        <div class="auth-field-group">
+          <div class="auth-label-row">
+            <label class="auth-label" for="authPassword">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              Password
+            </label>
+          </div>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </span>
+            <input type="password" id="authPassword" class="auth-input has-toggle" value="admin123" required placeholder="••••••••" autocomplete="current-password">
+            <button type="button" id="btnTogglePassword" class="auth-pwd-toggle" title="Toggle password visibility">
+              <span id="pwdToggleIcon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </span>
+            </button>
+          </div>
         </div>
 
-        <div id="authError" style="color:#FB7185; font-size:13px; font-weight:600; margin-bottom:16px; display:none;"></div>
+        <!-- Quick Demo Autofill Pill -->
+        <div id="btnQuickFillAuth" class="auth-preset-chip" title="Click to fill default admin credentials">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-1.5 1.5L19 7l-2 2-1.5-1.5M10 14a6 6 0 1 1 8.49-8.49 6 6 0 0 1-8.49 8.49zM5 19l3-3"></path></svg>
+          <span id="quickFillText">Default Admin (admin@quizlive.com / admin123)</span>
+        </div>
 
-        <button type="submit" class="btn block" style="padding:14px; font-size:15px; font-weight:800;">
-          Sign In to Dashboard
+        <div id="authError" class="auth-error-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span id="authErrorText">Invalid email or password</span>
+        </div>
+
+        <button type="submit" id="btnAuthSubmit" class="btn-auth-submit">
+          <span id="authSubmitSpinner" style="display:none; width:16px; height:16px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.8s linear infinite;"></span>
+          <span id="authSubmitText">Sign In to Dashboard</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </button>
       </form>
+
+      <div class="auth-footer-features">
+        <div class="auth-feature-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Local Mac Storage
+        </div>
+        <div class="auth-feature-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Realtime Sockets
+        </div>
+        <div class="auth-feature-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Cloudflare Ready
+        </div>
+      </div>
     </div>
   </div>
 
