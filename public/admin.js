@@ -1,4 +1,4 @@
-// admin.js - Enterprise Host Management Dashboard & Quiz Builder
+// admin.js - Enterprise Host Management Dashboard & Quiz Builder (Vector Icons & Original Layout)
 (function () {
   const AUTH_KEY = 'quiz_admin_token';
   let authToken = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
@@ -7,7 +7,7 @@
   let builderQuestions = [];
 
   const OPT_CLASSES = ['a', 'b', 'c', 'd'];
-  const LETTERS = ['▲', '◆', '●', '■'];
+  const LETTERS = ['A', 'B', 'C', 'D'];
 
   // Views
   const viewAuth = document.getElementById('view-auth');
@@ -136,9 +136,10 @@
     grid.innerHTML = '';
 
     if (savedQuizzes.length === 0) {
+      const folderSvg = window.Icons ? window.Icons.folder(32) : '';
       grid.innerHTML = `
         <div class="card" style="grid-column: 1 / -1; text-align:center; padding:48px 20px;">
-          <div style="font-size:36px; margin-bottom:12px;">📁</div>
+          <div style="color:var(--primary); margin-bottom:12px;">${folderSvg}</div>
           <h3 style="margin:0 0 8px; font-size:18px; font-weight:800;">No Saved Quizzes Found</h3>
           <p class="muted" style="margin:0 auto 20px; max-width:400px; font-size:14px;">
             Create your first quiz deck, import from CSV, or load the pre-built sample trivia deck.
@@ -151,6 +152,12 @@
       `;
       return;
     }
+
+    const rocketSvg = window.Icons ? window.Icons.rocket(13) : '';
+    const editSvg = window.Icons ? window.Icons.edit(13) : '';
+    const copySvg = window.Icons ? window.Icons.copy(13) : '';
+    const trashSvg = window.Icons ? window.Icons.trash(13) : '';
+    const clockSvg = window.Icons ? window.Icons.clock(12) : '';
 
     savedQuizzes.forEach((quiz) => {
       const card = document.createElement('div');
@@ -165,22 +172,22 @@
           <h3 class="quiz-deck-title">${escapeHtml(quiz.title || 'Untitled Session')}</h3>
           <div class="quiz-deck-meta">
             <span class="pill" style="font-size:11px; padding:3px 8px;">${count} Questions</span>
-            <span>⏱️ ~${estMin} min</span>
-            <span>📅 ${quiz.dateStr || 'Saved'}</span>
+            <span class="row" style="gap:4px; align-items:center;">${clockSvg} ~${estMin} min</span>
+            <span>${quiz.dateStr || 'Saved'}</span>
           </div>
         </div>
         <div class="quiz-deck-actions">
-          <button class="btn btn-live" style="flex:1; padding:8px 12px; font-size:12px;" onclick="window.AdminApp.launchQuiz('${quiz.id}')">
-            🚀 Go Live
+          <button class="btn btn-live" style="flex:1; padding:8px 12px; font-size:12px; display:inline-flex; align-items:center; justify-content:center; gap:6px;" onclick="window.AdminApp.launchQuiz('${quiz.id}')">
+            ${rocketSvg} Go Live
           </button>
-          <button class="btn secondary" style="padding:8px 12px; font-size:12px;" onclick="window.AdminApp.editQuiz('${quiz.id}')">
-            ✏️ Edit
+          <button class="btn secondary" style="padding:8px 12px; font-size:12px; display:inline-flex; align-items:center; gap:5px;" onclick="window.AdminApp.editQuiz('${quiz.id}')">
+            ${editSvg} Edit
           </button>
-          <button class="btn secondary" style="padding:8px 10px; font-size:12px;" title="Duplicate Quiz" onclick="window.AdminApp.duplicateQuiz('${quiz.id}')">
-            📋
+          <button class="btn secondary" style="padding:8px 10px; font-size:12px; display:inline-flex; align-items:center;" title="Duplicate Quiz" onclick="window.AdminApp.duplicateQuiz('${quiz.id}')">
+            ${copySvg}
           </button>
-          <button class="btn secondary" style="padding:8px 10px; font-size:12px; color:#FB7185;" title="Delete Quiz" onclick="window.AdminApp.deleteQuiz('${quiz.id}')">
-            🗑️
+          <button class="btn secondary" style="padding:8px 10px; font-size:12px; color:#FB7185; display:inline-flex; align-items:center;" title="Delete Quiz" onclick="window.AdminApp.deleteQuiz('${quiz.id}')">
+            ${trashSvg}
           </button>
         </div>
       `;
@@ -201,7 +208,6 @@
       });
 
       if (res.ok && res.presenterUrl) {
-        // Open the clean projector view in a new browser tab!
         const win = window.open(res.presenterUrl, '_blank');
         if (!win) {
           window.location.href = res.presenterUrl;
@@ -215,7 +221,7 @@
   }
 
   // ---------------------------------------------------------------------
-  // Quiz Builder / Editor
+  // Quiz Builder / Editor (Original Premium Styling & Vectors)
   // ---------------------------------------------------------------------
   function openNewQuizBuilder() {
     currentEditingQuizId = null;
@@ -330,6 +336,47 @@
     return null;
   }
 
+  function handleImageUpload(file, callback) {
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, SVG, WebP).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round(height * (MAX_WIDTH / width));
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round(width * (MAX_HEIGHT / height));
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        callback(dataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Render questions using the authentic rich design system
   function renderBuilderQuestions() {
     const container = document.getElementById('builderQuestionList');
     const countLabel = document.getElementById('builderTotalCount');
@@ -339,89 +386,195 @@
     container.innerHTML = '';
     builderQuestions.forEach((q, idx) => {
       const card = document.createElement('div');
-      card.className = 'q-item';
+      card.className = 'q-item card';
 
-      const isTf = q.type === 'tf';
-      const shapeSvg0 = window.Icons ? window.Icons.shape(0, 14) : '▲';
-      const shapeSvg1 = window.Icons ? window.Icons.shape(1, 14) : '◆';
-      const shapeSvg2 = window.Icons ? window.Icons.shape(2, 14) : '●';
-      const shapeSvg3 = window.Icons ? window.Icons.shape(3, 14) : '■';
+      // 1. Header Row
+      const header = document.createElement('div');
+      header.className = 'q-header';
 
-      card.innerHTML = `
-        <div class="q-head">
-          <div class="row" style="gap:8px;">
-            <span class="pill" style="font-size:11px; padding:2px 8px;">#${idx + 1}</span>
-            <span class="q-type-badge">${isTf ? 'True / False' : 'Multiple Choice'}</span>
-            <label class="q-double-toggle ${q.isDoublePoints ? 'active' : ''}">
-              <input type="checkbox" ${q.isDoublePoints ? 'checked' : ''} onchange="window.AdminApp.toggle2x(${idx}, this.checked)">
-              ⚡ 2X Double Points
-            </label>
-          </div>
-          <div class="q-actions">
-            <button class="btn-icon" title="Move Up" ${idx === 0 ? 'disabled' : ''} onclick="window.AdminApp.moveQ(${idx}, -1)">↑</button>
-            <button class="btn-icon" title="Move Down" ${idx === builderQuestions.length - 1 ? 'disabled' : ''} onclick="window.AdminApp.moveQ(${idx}, 1)">↓</button>
-            <button class="btn-icon" title="Delete Question" style="color:#FB7185;" onclick="window.AdminApp.deleteQ(${idx})">✕</button>
-          </div>
-        </div>
+      const meta = document.createElement('div');
+      meta.className = 'q-meta';
 
-        <div style="margin-bottom:12px;">
-          <input type="text" class="q-input" placeholder="Type question prompt here..." value="${escapeHtml(q.text)}" oninput="window.AdminApp.updateQText(${idx}, this.value)">
-        </div>
+      const numPill = document.createElement('span');
+      numPill.className = 'q-index-pill';
+      numPill.textContent = `Question ${idx + 1}`;
+      meta.appendChild(numPill);
 
-        <div class="row between" style="margin-bottom:12px; gap:12px; flex-wrap:wrap;">
-          <div class="row" style="gap:8px; align-items:center;">
-            <label class="q-label" style="margin:0;">Time Limit:</label>
-            <select class="q-select" onchange="window.AdminApp.updateQSec(${idx}, this.value)">
-              <option value="10" ${q.seconds === 10 ? 'selected' : ''}>10 seconds</option>
-              <option value="15" ${q.seconds === 15 ? 'selected' : ''}>15 seconds</option>
-              <option value="20" ${q.seconds === 20 || !q.seconds ? 'selected' : ''}>20 seconds</option>
-              <option value="30" ${q.seconds === 30 ? 'selected' : ''}>30 seconds</option>
-              <option value="60" ${q.seconds === 60 ? 'selected' : ''}>60 seconds</option>
-            </select>
-          </div>
-          <div class="row" style="gap:8px; align-items:center;">
-            <label class="q-label" style="margin:0;">Image URL:</label>
-            <input type="text" placeholder="https://... (optional)" value="${escapeHtml(q.image || '')}" style="font-size:12px; padding:6px 10px; width:220px;" oninput="window.AdminApp.updateQImage(${idx}, this.value)">
-          </div>
-        </div>
+      const typeBadge = document.createElement('span');
+      typeBadge.className = 'pill';
+      typeBadge.style.fontSize = '12px';
+      typeBadge.textContent = q.type === 'tf' ? 'True / False' : 'Multiple Choice';
+      meta.appendChild(typeBadge);
 
-        <div class="q-opts-grid ${isTf ? 'tf' : ''}">
-          ${isTf ? `
-            <div class="q-opt-row">
-              <input type="radio" name="corr_${idx}" value="0" ${q.correctIndex === 0 ? 'checked' : ''} onchange="window.AdminApp.updateQCorrect(${idx}, 0)">
-              <span class="q-opt-badge tf-true">✓</span>
-              <input type="text" class="q-opt-input" value="True" readonly>
-            </div>
-            <div class="q-opt-row">
-              <input type="radio" name="corr_${idx}" value="1" ${q.correctIndex === 1 ? 'checked' : ''} onchange="window.AdminApp.updateQCorrect(${idx}, 1)">
-              <span class="q-opt-badge tf-false">✕</span>
-              <input type="text" class="q-opt-input" value="False" readonly>
-            </div>
-          ` : `
-            <div class="q-opt-row">
-              <input type="radio" name="corr_${idx}" value="0" ${q.correctIndex === 0 ? 'checked' : ''} onchange="window.AdminApp.updateQCorrect(${idx}, 0)">
-              <span class="q-opt-badge a">${shapeSvg0}</span>
-              <input type="text" class="q-opt-input" placeholder="Option 1" value="${escapeHtml(q.options[0]?.text || '')}" oninput="window.AdminApp.updateQOpt(${idx}, 0, this.value)">
-            </div>
-            <div class="q-opt-row">
-              <input type="radio" name="corr_${idx}" value="1" ${q.correctIndex === 1 ? 'checked' : ''} onchange="window.AdminApp.updateQCorrect(${idx}, 1)">
-              <span class="q-opt-badge b">${shapeSvg1}</span>
-              <input type="text" class="q-opt-input" placeholder="Option 2" value="${escapeHtml(q.options[1]?.text || '')}" oninput="window.AdminApp.updateQOpt(${idx}, 1, this.value)">
-            </div>
-            <div class="q-opt-row">
-              <input type="radio" name="corr_${idx}" value="2" ${q.correctIndex === 2 ? 'checked' : ''} onchange="window.AdminApp.updateQCorrect(${idx}, 2)">
-              <span class="q-opt-badge c">${shapeSvg2}</span>
-              <input type="text" class="q-opt-input" placeholder="Option 3" value="${escapeHtml(q.options[2]?.text || '')}" oninput="window.AdminApp.updateQOpt(${idx}, 2, this.value)">
-            </div>
-            <div class="q-opt-row">
-              <input type="radio" name="corr_${idx}" value="3" ${q.correctIndex === 3 ? 'checked' : ''} onchange="window.AdminApp.updateQCorrect(${idx}, 3)">
-              <span class="q-opt-badge d">${shapeSvg3}</span>
-              <input type="text" class="q-opt-input" placeholder="Option 4" value="${escapeHtml(q.options[3]?.text || '')}" oninput="window.AdminApp.updateQOpt(${idx}, 3, this.value)">
-            </div>
-          `}
-        </div>
-      `;
+      // Time Select
+      const select = document.createElement('select');
+      select.className = 'q-select-clean';
+      [10, 15, 20, 30, 60, 90, 120].forEach((sec) => {
+        const opt = document.createElement('option');
+        opt.value = sec;
+        opt.textContent = `${sec}s`;
+        if (q.seconds === sec || (!q.seconds && sec === 20)) opt.selected = true;
+        select.appendChild(opt);
+      });
+      select.onchange = () => {
+        q.seconds = parseInt(select.value, 10);
+      };
+      meta.appendChild(select);
 
+      // 2X Double Points Toggle
+      const zapSvg = window.Icons ? window.Icons.zap(13) : '';
+      const multLabel = document.createElement('label');
+      multLabel.className = `multiplier-toggle ${q.isDoublePoints ? 'active' : ''}`;
+      const multCheck = document.createElement('input');
+      multCheck.type = 'checkbox';
+      multCheck.checked = !!q.isDoublePoints;
+      multCheck.onchange = () => {
+        q.isDoublePoints = multCheck.checked;
+        multLabel.classList.toggle('active', multCheck.checked);
+      };
+      multLabel.appendChild(multCheck);
+      multLabel.innerHTML += `${zapSvg} 2x Points`;
+      meta.appendChild(multLabel);
+
+      header.appendChild(meta);
+
+      // Delete Button
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn danger';
+      removeBtn.style.padding = '6px 12px';
+      removeBtn.style.fontSize = '12px';
+      removeBtn.innerHTML = `${window.Icons ? window.Icons.trash(13) : ''} Delete`;
+      removeBtn.onclick = () => {
+        builderQuestions.splice(idx, 1);
+        renderBuilderQuestions();
+      };
+      header.appendChild(removeBtn);
+      card.appendChild(header);
+
+      // 2. Question Prompt Section
+      const promptSec = document.createElement('div');
+      promptSec.className = 'q-prompt-section';
+
+      const promptLabel = document.createElement('label');
+      promptLabel.className = 'q-label';
+      promptLabel.textContent = 'Question Prompt';
+      promptSec.appendChild(promptLabel);
+
+      const textInput = document.createElement('textarea');
+      textInput.placeholder = 'Enter the question to display to participants…';
+      textInput.value = q.text;
+      textInput.rows = 2;
+      textInput.oninput = () => { q.text = textInput.value; };
+      promptSec.appendChild(textInput);
+
+      // Media attachment row
+      const mediaBar = document.createElement('div');
+      mediaBar.className = 'q-media-bar';
+
+      const imgInput = document.createElement('input');
+      imgInput.type = 'file';
+      imgInput.accept = 'image/*';
+      imgInput.style.display = 'none';
+      imgInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          handleImageUpload(file, (dataUrl) => {
+            q.image = dataUrl;
+            renderBuilderQuestions();
+          });
+        }
+      };
+
+      const addImgBtn = document.createElement('button');
+      addImgBtn.className = 'btn secondary';
+      addImgBtn.style.padding = '6px 12px';
+      addImgBtn.style.fontSize = '13px';
+      addImgBtn.innerHTML = `${window.Icons ? window.Icons.image(14) : ''} ${q.image ? 'Replace Diagram' : 'Attach Diagram / Image'}`;
+      addImgBtn.onclick = () => imgInput.click();
+      mediaBar.appendChild(addImgBtn);
+      mediaBar.appendChild(imgInput);
+
+      if (q.image) {
+        const preview = document.createElement('img');
+        preview.src = q.image;
+        preview.style.height = '36px';
+        preview.style.borderRadius = '6px';
+        preview.style.border = '1px solid var(--border-subtle)';
+        mediaBar.appendChild(preview);
+
+        const delImgBtn = document.createElement('button');
+        delImgBtn.className = 'btn secondary';
+        delImgBtn.style.padding = '6px 10px';
+        delImgBtn.style.fontSize = '12px';
+        delImgBtn.textContent = 'Remove Image';
+        delImgBtn.onclick = () => {
+          q.image = null;
+          renderBuilderQuestions();
+        };
+        mediaBar.appendChild(delImgBtn);
+      }
+      promptSec.appendChild(mediaBar);
+      card.appendChild(promptSec);
+
+      // 3. Options Builder Section (Solid vibrant colored shape badges + Radio)
+      const optLabel = document.createElement('label');
+      optLabel.className = 'q-label';
+      optLabel.textContent = 'Answer Options (Select the correct answer)';
+      card.appendChild(optLabel);
+
+      const optGrid = document.createElement('div');
+      optGrid.className = 'q-options-builder-grid';
+
+      q.options.forEach((opt, oi) => {
+        const isCorrect = q.correctIndex === oi;
+        const optItem = document.createElement('div');
+        const optClass = q.type === 'tf' ? (oi === 0 ? 'tf-true' : 'tf-false') : OPT_CLASSES[oi];
+        optItem.className = `q-opt-builder-item ${isCorrect ? 'is-correct' : ''}`;
+
+        const badge = document.createElement('span');
+        badge.className = `opt-badge ${optClass}`;
+        if (q.type === 'tf') {
+          badge.innerHTML = oi === 0 && window.Icons ? window.Icons.check(14) : (window.Icons ? window.Icons.cross(14) : (oi === 0 ? '✓' : '✕'));
+        } else {
+          badge.innerHTML = window.Icons ? window.Icons.shape(oi, 14) : LETTERS[oi];
+        }
+        optItem.appendChild(badge);
+
+        if (q.type === 'tf') {
+          const textSpan = document.createElement('span');
+          textSpan.style.flex = '1';
+          textSpan.style.fontSize = '15px';
+          textSpan.style.fontWeight = '600';
+          textSpan.textContent = opt.text;
+          optItem.appendChild(textSpan);
+        } else {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = `Option ${LETTERS[oi]} text…`;
+          input.value = opt.text;
+          input.style.flex = '1';
+          input.oninput = () => { opt.text = input.value; };
+          optItem.appendChild(input);
+        }
+
+        const radioLabel = document.createElement('label');
+        radioLabel.className = 'correct-radio-label';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = `correct-${q.id}`;
+        radio.checked = isCorrect;
+        radio.onchange = () => {
+          q.correctIndex = oi;
+          renderBuilderQuestions();
+        };
+        radioLabel.appendChild(radio);
+        radioLabel.appendChild(document.createTextNode(' Correct'));
+        optItem.appendChild(radioLabel);
+
+        optGrid.appendChild(optItem);
+      });
+
+      card.appendChild(optGrid);
       container.appendChild(card);
     });
   }
@@ -605,7 +758,7 @@
       const opt2 = row[2] ? row[2].trim() : '';
       const opt3 = row[3] ? row[3].trim() : '';
       const opt4 = row[4] ? row[4].trim() : '';
-      const correctRaw = row[5] ? row[5].trim() : (row[3] && !row[4] ? row[3].trim() : '1');
+      const correctRaw = row[5] ? row[5].trim() : '1';
       const timeRaw = row[6] ? parseInt(row[6].trim(), 10) : 20;
       const doubleRaw = row[7] ? row[7].trim().toLowerCase() : '';
 
@@ -777,38 +930,6 @@
     deleteQuiz,
     launchQuiz,
     loadSampleTrivia: () => document.getElementById('btnLoadSampleDecks').click(),
-    toggle2x: (idx, val) => {
-      if (builderQuestions[idx]) builderQuestions[idx].isDoublePoints = val;
-    },
-    moveQ: (idx, dir) => {
-      const target = idx + dir;
-      if (target < 0 || target >= builderQuestions.length) return;
-      const temp = builderQuestions[idx];
-      builderQuestions[idx] = builderQuestions[target];
-      builderQuestions[target] = temp;
-      renderBuilderQuestions();
-    },
-    deleteQ: (idx) => {
-      builderQuestions.splice(idx, 1);
-      renderBuilderQuestions();
-    },
-    updateQText: (idx, val) => {
-      if (builderQuestions[idx]) builderQuestions[idx].text = val;
-    },
-    updateQSec: (idx, val) => {
-      if (builderQuestions[idx]) builderQuestions[idx].seconds = Number(val) || 20;
-    },
-    updateQImage: (idx, val) => {
-      if (builderQuestions[idx]) builderQuestions[idx].image = val.trim() || null;
-    },
-    updateQCorrect: (idx, optIdx) => {
-      if (builderQuestions[idx]) builderQuestions[idx].correctIndex = optIdx;
-    },
-    updateQOpt: (idx, optIdx, val) => {
-      if (builderQuestions[idx] && builderQuestions[idx].options[optIdx]) {
-        builderQuestions[idx].options[optIdx].text = val;
-      }
-    },
   };
 
   // Check current auth status on load
