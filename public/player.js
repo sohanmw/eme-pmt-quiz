@@ -392,6 +392,9 @@ function handleShowQuestion(q) {
 socket.on('question:get_ready', (q) => {
   if (pTimerRaf) cancelAnimationFrame(pTimerRaf);
   showScreen('get-ready');
+  const iconWrap = document.getElementById('pGetReadyIconWrap');
+  if (iconWrap && window.Icons) iconWrap.innerHTML = window.Icons.bolt(38);
+
   const counterEl = document.getElementById('pGetReadyCounter');
   if (counterEl) counterEl.textContent = `Question ${q.index + 1} of ${q.total}`;
   if (q.isDoublePoints) vibrate([30, 40, 30]);
@@ -451,7 +454,7 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, leaderboard }) => 
     vibrate(60);
     if (window.QuizAudio) window.QuizAudio.playWrong();
   } else if (gained > 0) {
-    headline.textContent = isDoublePoints ? '⚡ 2X Correct Response!' : 'Correct Response';
+    headline.textContent = isDoublePoints ? '2X Correct Response!' : 'Correct Response';
     headline.style.color = '#34D399';
     detail.textContent = `+${gained} points earned for speed & accuracy${isDoublePoints ? ' (2x Multiplier Applied)' : ''}`;
     scoreBadge.textContent = `Total: ${myScore} PTS`;
@@ -480,7 +483,7 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, leaderboard }) => 
     if (window.QuizAudio) window.QuizAudio.playWrong();
   }
 
-  // Render Motivational Context Card
+  // Render Motivational Context Card with High-Quality SVG Icons
   const motivCard = document.getElementById('resultMotivationCard');
   if (motivCard && me) {
     motivCard.style.display = 'flex';
@@ -492,23 +495,27 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, leaderboard }) => 
     motivCard.className = 'motivation-card';
     if (me.rank === 1) {
       motivCard.classList.add('podium-1');
-      if (rankBadge) rankBadge.textContent = '👑 1st Place';
+      const crownSvg = window.Icons ? window.Icons.crown(15) : '';
+      if (rankBadge) rankBadge.innerHTML = `${crownSvg} 1st Place`;
       if (headEl) headEl.textContent = "Dominating the Board!";
       if (subEl) subEl.textContent = "You are leading the session with the top score!";
     } else if (me.rank === 2) {
       motivCard.classList.add('podium-2');
-      if (rankBadge) rankBadge.textContent = '🥈 2nd Place';
+      const medalSvg = window.Icons ? window.Icons.medal(15) : '';
+      if (rankBadge) rankBadge.innerHTML = `${medalSvg} 2nd Place`;
       if (headEl) headEl.textContent = "Podium Position!";
       if (subEl) subEl.textContent = `Only ${me.pointsBehindNext || 0} PTS behind ${me.nextPlayerName || '1st place'}!`;
     } else if (me.rank === 3) {
       motivCard.classList.add('podium-3');
-      if (rankBadge) rankBadge.textContent = '🥉 3rd Place';
+      const medalSvg = window.Icons ? window.Icons.medal(15) : '';
+      if (rankBadge) rankBadge.innerHTML = `${medalSvg} 3rd Place`;
       if (headEl) headEl.textContent = "On the Podium!";
       if (subEl) subEl.textContent = `Only ${me.pointsBehindNext || 0} PTS behind ${me.nextPlayerName || '2nd place'}!`;
     } else {
       if (rankBadge) rankBadge.textContent = `Rank #${me.rank}`;
       if (headEl) {
-        headEl.textContent = me.rankDelta > 0 ? `Climbed ${me.rankDelta} Spot${me.rankDelta > 1 ? 's' : ''}! 🔥` : `Rank #${me.rank} of ${leaderboard.length}`;
+        const flameSvg = window.Icons ? window.Icons.flame(13) : '';
+        headEl.innerHTML = me.rankDelta > 0 ? `Climbed ${me.rankDelta} Spot${me.rankDelta > 1 ? 's' : ''}! ${flameSvg}` : `Rank #${me.rank} of ${leaderboard.length}`;
       }
       if (subEl) {
         subEl.textContent = me.nextPlayerName ? `${me.nextPlayerName} is ${me.pointsBehindNext || 0} PTS ahead. Keep pushing!` : "Keep answering fast to climb into the top ranks!";

@@ -41,8 +41,8 @@
   <div class="modal-card" style="max-width:520px;">
     <div class="row between" style="margin-bottom:12px;">
       <h3 style="margin:0; font-size:18px; font-weight:700;">My Mac Quiz Library</h3>
-      <button class="btn secondary" id="btnSaveCurrentToLibrary" style="font-size:12px; padding:6px 12px;">
-        💾 Save Quiz to Mac
+      <button class="btn secondary" id="btnSaveCurrentToLibrary" style="font-size:12px; padding:6px 12px; display:inline-flex; align-items:center; gap:6px;">
+        <span id="saveQuizIcon"></span> Save Quiz to Mac
       </button>
     </div>
     <p class="muted" style="margin:0 0 16px; font-size:13px;">Quizzes are stored directly as JSON files on your laptop hard drive.</p>
@@ -114,7 +114,7 @@
       </p>
 
       <div class="modal-csv-dropzone" id="csvDropzone">
-        <div style="font-size:24px; margin-bottom:6px;">📊</div>
+        <div id="csvDropzoneIcon" style="color:#38BDF8; margin-bottom:6px; display:flex; align-items:center; justify-content:center;"></div>
         <strong style="font-size:14px; color:var(--text-primary);">Click or Drag & Drop .CSV file</strong>
         <p class="muted" style="font-size:11px; margin:4px 0 0;">Supports standard Kahoot and Quiz formats</p>
         <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" style="display:none;">

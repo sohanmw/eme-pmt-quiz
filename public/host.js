@@ -721,7 +721,8 @@ document.getElementById('btnSaveCurrentToLibrary').onclick = async () => {
   await saveDeckToDisk(title, questions);
 
   saveBtn.disabled = false;
-  saveBtn.textContent = '💾 Save Quiz to Mac';
+  const diskSvg = window.Icons ? window.Icons.disk(14) : '';
+  saveBtn.innerHTML = `<span id="saveQuizIcon">${diskSvg}</span> Save Quiz to Mac`;
   await renderLibraryList();
 };
 
@@ -808,6 +809,8 @@ function openCsvModal() {
   if (modalCsv) modalCsv.style.display = 'flex';
   if (csvTextInput) csvTextInput.value = '';
   if (csvParseStatus) csvParseStatus.innerHTML = '';
+  const dropIcon = document.getElementById('csvDropzoneIcon');
+  if (dropIcon && window.Icons) dropIcon.innerHTML = window.Icons.upload(36);
   parsedCsvQuestions = [];
   if (btnConfirmCsv) {
     btnConfirmCsv.disabled = true;
@@ -818,6 +821,11 @@ function openCsvModal() {
 function closeCsvModal() {
   if (modalCsv) modalCsv.style.display = 'none';
 }
+
+const saveIconEl = document.getElementById('saveQuizIcon');
+if (saveIconEl && window.Icons) saveIconEl.innerHTML = window.Icons.disk(14);
+const closeCsvEl = document.getElementById('btnCloseCsvModal');
+if (closeCsvEl && window.Icons) closeCsvEl.innerHTML = window.Icons.cross(14);
 
 if (btnOpenCsv) btnOpenCsv.onclick = openCsvModal;
 if (btnCloseCsv) btnCloseCsv.onclick = closeCsvModal;
@@ -1357,7 +1365,7 @@ socket.on('question:get_ready', (q) => {
       if (countdownEl) countdownEl.textContent = String(remainingSecs);
       if (window.QuizAudio) window.QuizAudio.playTick(1 - (remainingSecs / 3));
     } else {
-      if (countdownEl) countdownEl.textContent = '⚡';
+      if (countdownEl) countdownEl.textContent = 'GO!';
       clearInterval(getReadyInterval);
     }
   }, 1000);
@@ -1442,7 +1450,7 @@ socket.on('question:timeUp', ({ allAnswered } = {}) => {
 
   const skipBtn = document.getElementById('skipQuestion');
   if (skipBtn) {
-    skipBtn.textContent = allAnswered ? '📊 All Answered — Reveal Results' : '📊 Time Expired — Reveal Results';
+    skipBtn.textContent = allAnswered ? 'All Answered — Reveal Results' : 'Time Expired — Reveal Results';
     skipBtn.style.background = '#6366F1';
     skipBtn.style.color = '#fff';
     skipBtn.style.boxShadow = '0 0 20px rgba(99, 102, 241, 0.6)';
@@ -1609,7 +1617,7 @@ function showAnimatedScoreboard(leaderboard) {
   const nextBtn = document.getElementById('nextQuestion');
   if (nextBtn) {
     const isLastQ = currentQuestionIndex + 1 >= totalQuestionsCount;
-    nextBtn.textContent = isLastQ ? 'View Final Results 🏆 ➔' : 'Next Question ➔';
+    nextBtn.textContent = isLastQ ? 'View Final Results ➔' : 'Next Question ➔';
   }
 }
 
