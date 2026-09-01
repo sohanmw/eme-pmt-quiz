@@ -390,10 +390,10 @@
 
       // 1. Header Row
       const header = document.createElement('div');
-      header.className = 'q-header';
+      header.className = 'q-card-header';
 
       const meta = document.createElement('div');
-      meta.className = 'q-meta';
+      meta.className = 'q-header-meta';
 
       const numPill = document.createElement('span');
       numPill.className = 'q-index-pill';
@@ -424,7 +424,7 @@
       // 2X Double Points Toggle
       const zapSvg = window.Icons ? window.Icons.zap(13) : '';
       const multLabel = document.createElement('label');
-      multLabel.className = `multiplier-toggle ${q.isDoublePoints ? 'active' : ''}`;
+      multLabel.className = `multiplier-toggle-label ${q.isDoublePoints ? 'active' : ''}`;
       const multCheck = document.createElement('input');
       multCheck.type = 'checkbox';
       multCheck.checked = !!q.isDoublePoints;
@@ -433,7 +433,12 @@
         multLabel.classList.toggle('active', multCheck.checked);
       };
       multLabel.appendChild(multCheck);
-      multLabel.innerHTML += `${zapSvg} 2x Points`;
+      const zapSpan = document.createElement('span');
+      zapSpan.style.display = 'inline-flex';
+      zapSpan.style.alignItems = 'center';
+      zapSpan.style.gap = '4px';
+      zapSpan.innerHTML = `${zapSvg} 2x Points`;
+      multLabel.appendChild(zapSpan);
       meta.appendChild(multLabel);
 
       header.appendChild(meta);
@@ -443,6 +448,9 @@
       removeBtn.className = 'btn danger';
       removeBtn.style.padding = '6px 12px';
       removeBtn.style.fontSize = '12px';
+      removeBtn.style.display = 'inline-flex';
+      removeBtn.style.alignItems = 'center';
+      removeBtn.style.gap = '6px';
       removeBtn.innerHTML = `${window.Icons ? window.Icons.trash(13) : ''} Delete`;
       removeBtn.onclick = () => {
         builderQuestions.splice(idx, 1);

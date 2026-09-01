@@ -223,9 +223,14 @@
       chips.innerHTML = '';
       players.forEach((p) => {
         const chip = document.createElement('span');
-        chip.className = 'chip';
-        const avatarSvg = window.Avatars ? window.Avatars.getSvg(p.avatar, 20) : '';
-        chip.innerHTML = `${avatarSvg}<span>${escapeHtml(p.name)}</span>`;
+        chip.className = 'participant-chip';
+        const avatarSvg = window.Avatars ? window.Avatars.getSvg(p.avatar || 'cyber_bot', 28) : '';
+        const crossSvg = window.Icons ? window.Icons.cross(11) : '✕';
+        chip.innerHTML = `
+          <span class="avatar-wrapper">${avatarSvg}</span>
+          <span class="player-name-text">${escapeHtml(p.name)}</span>
+          <span class="muted" style="opacity:0.5; margin-left:2px; font-size:11px;">${crossSvg}</span>
+        `;
         chip.title = 'Click to remove participant';
         chip.onclick = () => {
           if (confirm(`Remove ${p.name} from session?`)) {
