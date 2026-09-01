@@ -21,6 +21,7 @@
   let getReadyInterval = null;
   let prevLeaderboardMap = new Map();
   let sessionAnalyticsData = null;
+  let latestLeaderboard = [];
 
   const OPT_CLASSES = ['a', 'b', 'c', 'd'];
   const LETTERS = ['▲', '◆', '●', '■'];
@@ -125,9 +126,18 @@
       if (res.title) {
         document.getElementById('presenterStageTitle').textContent = res.title;
       }
-      enterLobby(res.pin, res.ips, res.port);
-      if (res.players) {
-        updateLobbyPlayers(res.players);
+      if (res.state === 'reveal' && res.revealData) {
+        renderRevealScreen(res.revealData);
+      } else if (res.state === 'question' && res.currentQuestion) {
+        currentQuestionMeta = res.currentQuestion;
+        currentQuestionIndex = res.currentQuestion.index;
+        totalQuestionsCount = res.currentQuestion.total;
+        showScreen('question');
+      } else {
+        enterLobby(res.pin, res.ips, res.port);
+        if (res.players) {
+          updateLobbyPlayers(res.players);
+        }
       }
     });
   });
@@ -470,45 +480,48 @@
   // ---------------------------------------------------------------------
   // Step 1: Kahoot Vertical Bar Graph Snapshot
   // ---------------------------------------------------------------------
-  socket.on('question:reveal', ({ question, correctIndex, isDoublePoints, counts, leaderboard }) => {
+  function renderRevealScreen({ question, correctIndex, isDoublePoints, counts, leaderboard }) {
     if (hostTimerRaf) cancelAnimationFrame(hostTimerRaf);
     if (question) {
       currentQuestionMeta = question;
       currentQuestionIndex = question.index;
       totalQuestionsCount = question.total;
     }
+    if (leaderboard) {
+      latestLeaderboard = leaderboard;
+    }
     showScreen('reveal');
 
     if (window.QuizAudio) window.QuizAudio.stopQuestionMusic();
 
     const q = currentQuestionMeta;
-    document.getElementById('revealQText').textContent = q ? (q.text || '') : '';
+    const qTextEl = document.getElementById('revealQText');
+    if (qTextEl) qTextEl.textContent = q ? (q.text || '') : '';
+
     const badge2x = document.getElementById('reveal2xBadge');
     if (badge2x) {
       badge2x.style.display = isDoublePoints ? 'inline-flex' : 'none';
     }
 
     const container = document.getElementById('revealBars');
+    if (!container) return;
     container.innerHTML = '';
 
-    if (!q || !q.options || !q.options.length) {
-      console.warn('No question options available for reveal.');
-      return;
-    }
+    const options = (q && Array.isArray(q.options) && q.options.length) 
+      ? q.options.map((o) => (typeof o === 'string' ? o : (o.text || '')))
+      : ['Option 1', 'Option 2', 'Option 3', 'Option 4'];
 
-    const isTf = q.type === 'tf';
+    const isTf = q ? q.type === 'tf' : false;
     const wrapper = document.createElement('div');
     wrapper.className = 'kahoot-bars-wrapper';
 
     const grid = document.createElement('div');
     grid.className = `kahoot-bars-grid ${isTf ? 'tf-mode' : ''}`;
 
-    const safeCounts = counts || [];
+    const safeCounts = counts || new Array(options.length).fill(0);
     const maxCount = Math.max(...safeCounts, 1);
 
-    const optionsList = q.options.map((o) => (typeof o === 'string' ? o : (o.text || '')));
-
-    optionsList.forEach((text, i) => {
+    options.forEach((text, i) => {
       const isCorrect = i === correctIndex;
       const count = safeCounts[i] || 0;
       const fillHeightPct = maxCount > 0 && count > 0 ? Math.max(25, Math.round((count / maxCount) * 92)) : 0;
@@ -561,20 +574,31 @@
     const btnGoScoreboard = document.getElementById('btnGoToScoreboard');
     if (btnGoScoreboard) {
       btnGoScoreboard.onclick = () => {
-        showAnimatedScoreboard(leaderboard);
+        showAnimatedScoreboard(latestLeaderboard);
       };
     }
+  }
+
+  socket.on('question:reveal', (data) => {
+    renderRevealScreen(data);
   });
 
   // ---------------------------------------------------------------------
   // Step 2: Animated Top 10 Scoreboard
   // ---------------------------------------------------------------------
   function showAnimatedScoreboard(leaderboard) {
+    const list = (leaderboard && leaderboard.length) ? leaderboard : (latestLeaderboard || []);
+    latestLeaderboard = list;
     showScreen('scoreboard');
     const listEl = document.getElementById('scoreboardList');
+    if (!listEl) return;
     listEl.innerHTML = '';
 
-    const top10 = leaderboard.slice(0, 10);
+    if (list.length === 0) {
+      listEl.innerHTML = '<p class="muted" style="text-align:center; padding:24px;">No player scores recorded yet.</p>';
+    }
+
+    const top10 = list.slice(0, 10);
     const rowElements = [];
 
     top10.forEach((p, newRankIdx) => {

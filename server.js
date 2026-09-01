@@ -513,6 +513,7 @@ function endQuestion(pin) {
       p.streak = 0;
     }
   });
+  game.revealCounts = counts;
 
   const lb = leaderboardWithStandings(game);
   lb.forEach((p) => {
@@ -638,7 +639,14 @@ io.on('connection', (socket) => {
       port: currentPort,
       players: publicPlayerList(game),
       questionCount: game.questions.length,
-      currentQuestion: game.state === 'question' ? currentQuestionPayload(game) : null,
+      currentQuestion: currentQuestionPayload(game),
+      revealData: game.state === 'reveal' ? {
+        question: currentQuestionPayload(game),
+        correctIndex: game.questions[game.currentIndex]?.correctIndex,
+        isDoublePoints: !!game.questions[game.currentIndex]?.isDoublePoints,
+        counts: game.revealCounts || new Array(game.questions[game.currentIndex]?.options.length || 4).fill(0),
+        leaderboard: leaderboardWithStandings(game),
+      } : null,
     });
   });
 
