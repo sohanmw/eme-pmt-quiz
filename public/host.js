@@ -1044,8 +1044,15 @@ socket.on('timer:extend', ({ remainingMs, totalLimitMs }) => {
   }
 });
 
+let prevLeaderboardMap = new Map();
+let currentQuestionIndex = 0;
+let totalQuestionsCount = 0;
+
 socket.on('question:show', (q) => {
   currentQuestionMeta = q;
+  currentQuestionIndex = q.index;
+  totalQuestionsCount = q.total;
+
   showScreen('question');
 
   if (window.QuizAudio) window.QuizAudio.startQuestionTheme();
@@ -1123,7 +1130,7 @@ socket.on('question:timeUp', ({ allAnswered } = {}) => {
 });
 
 // ---------------------------------------------------------------------
-// Question Reveal & Clean Leaderboard Animation
+// SCREEN 1: Solid Vibrant Kahoot Bar Graph Snapshot
 // ---------------------------------------------------------------------
 socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboard }) => {
   if (hostTimerRaf) cancelAnimationFrame(hostTimerRaf);
@@ -1152,7 +1159,8 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
     currentQuestionMeta.options.forEach((text, i) => {
       const isCorrect = i === correctIndex;
       const count = counts[i] || 0;
-      const fillHeightPct = totalVotes > 0 ? Math.max(12, Math.round((count / maxCount) * 100)) : 12;
+      // Guaranteed solid height: 0 votes => 20px base, >0 votes => proportional height
+      const fillHeightPct = maxCount > 0 && count > 0 ? Math.max(25, Math.round((count / maxCount) * 92)) : 8;
 
       const col = document.createElement('div');
       col.className = `kahoot-bar-column ${isCorrect ? 'is-correct' : (count > 0 ? 'is-wrong' : '')}`;
@@ -1176,7 +1184,7 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
       const fill = document.createElement('div');
       const optClass = isTf ? (i === 0 ? 'tf-true' : 'tf-false') : OPT_CLASSES[i];
       fill.className = `kahoot-bar-fill ${optClass}`;
-      fill.style.height = '0%'; // Starts at 0 for smooth upward rise
+      fill.style.height = `${fillHeightPct}%`;
 
       track.appendChild(fill);
 
@@ -1194,48 +1202,115 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
       col.appendChild(track);
       col.appendChild(footer);
       grid.appendChild(col);
-
-      // Trigger animated rise
-      setTimeout(() => {
-        fill.style.height = `${fillHeightPct}%`;
-      }, 80 + i * 70);
     });
 
     wrapper.appendChild(grid);
     bars.appendChild(wrapper);
   }
 
-  // Leaderboard Rendering with Cute Avatars
+  // Next button leads to the Scoreboard screen
+  const btnScoreboard = document.getElementById('btnGoToScoreboard');
+  if (btnScoreboard) {
+    const isLastQ = currentQuestionIndex + 1 >= totalQuestionsCount;
+    btnScoreboard.textContent = isLastQ ? 'View Final Standings ➔' : 'View Scoreboard ➔';
+    btnScoreboard.onclick = () => showAnimatedScoreboard(leaderboard);
+  }
+});
+
+// ---------------------------------------------------------------------
+// SCREEN 2: Live Animated Top 10 Scoreboard
+// ---------------------------------------------------------------------
+function showAnimatedScoreboard(leaderboard) {
+  showScreen('scoreboard');
+  const counter = document.getElementById('scoreboardRoundCounter');
+  if (counter) counter.textContent = `Question ${currentQuestionIndex + 1} / ${totalQuestionsCount}`;
+
+  const top10 = leaderboard.slice(0, 10);
   const ol = document.getElementById('revealLeaderboard');
   ol.innerHTML = '';
 
-  leaderboard.slice(0, 8).forEach((p, idx) => {
+  top10.forEach((p, idx) => {
+    const prev = prevLeaderboardMap.get(p.id) || { score: 0, rank: idx + 1 };
+    const gained = p.score - prev.score;
+    const rankDiff = prev.rank - (idx + 1);
+
     const li = document.createElement('li');
+    li.className = `scoreboard-item rank-${idx + 1}`;
     li.dataset.playerId = p.id;
-    if (idx === 0) li.classList.add('top-1');
 
     const avatarSvg = window.Avatars ? window.Avatars.getSvg(p.avatar || 'cyber_bot', 28) : '';
     const flameIcon = p.streak >= 2 && window.Icons ? window.Icons.flame(12) : '';
 
     li.innerHTML = `
-      <div class="player-name">
-        <span class="rank">#${idx + 1}</span>
+      <div class="scoreboard-left">
+        <span class="scoreboard-rank" id="rankBadge_${p.id}">#${prev.rank}</span>
         <span class="avatar-badge-sm">${avatarSvg}</span>
-        <span>${p.name}</span>
+        <span class="scoreboard-name">${p.name}</span>
         ${p.streak >= 2 ? `<span class="streak-badge">${flameIcon} Streak ${p.streak}</span>` : ''}
+        <span id="rankShiftBadge_${p.id}"></span>
       </div>
-      <div><strong>${p.score}</strong> <span class="muted" style="font-size:12px;">PTS</span></div>
+      <div class="scoreboard-right">
+        ${gained > 0 ? `<span class="score-floater">+${gained}</span>` : ''}
+        <div><strong class="score-num" id="scoreNum_${p.id}">${prev.score}</strong> <span class="muted" style="font-size:12px;">PTS</span></div>
+      </div>
     `;
     ol.appendChild(li);
+
+    // Trigger score count up and rank shift indicators
+    setTimeout(() => {
+      const scoreNum = document.getElementById(`scoreNum_${p.id}`);
+      if (scoreNum && gained > 0) {
+        animateScoreCount(scoreNum, prev.score, p.score, 700);
+      }
+
+      const rankBadge = document.getElementById(`rankBadge_${p.id}`);
+      if (rankBadge) rankBadge.textContent = `#${idx + 1}`;
+
+      const rankShift = document.getElementById(`rankShiftBadge_${p.id}`);
+      if (rankShift) {
+        if (rankDiff > 0) {
+          rankShift.className = 'rank-shift up';
+          rankShift.innerHTML = `▲ +${rankDiff}`;
+        } else if (rankDiff < 0) {
+          rankShift.className = 'rank-shift down';
+          rankShift.innerHTML = `▼ ${Math.abs(rankDiff)}`;
+        }
+      }
+    }, 350 + idx * 70);
   });
-});
+
+  // Save current leaderboard state for next round's delta animation
+  prevLeaderboardMap.clear();
+  leaderboard.forEach((p, idx) => {
+    prevLeaderboardMap.set(p.id, { score: p.score, rank: idx + 1 });
+  });
+
+  const nextBtn = document.getElementById('nextQuestion');
+  if (nextBtn) {
+    const isLastQ = currentQuestionIndex + 1 >= totalQuestionsCount;
+    nextBtn.textContent = isLastQ ? 'View Final Results 🏆 ➔' : 'Next Question ➔';
+  }
+}
+
+function animateScoreCount(el, start, end, duration) {
+  const startTime = performance.now();
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(start + (end - start) * ease);
+    el.textContent = current;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
 
 document.getElementById('nextQuestion').onclick = () => {
   if (currentPin) socket.emit('host:next', { pin: currentPin });
 };
 
 // ---------------------------------------------------------------------
-// Final Podium Screen & Analytics Dashboard
+// FINAL SCREEN: Top 3 on Podium + Ranks 4-10 in List + Analytics
 // ---------------------------------------------------------------------
 socket.on('game:ended', ({ leaderboard, analytics }) => {
   latestSessionData = { leaderboard, analytics, date: new Date().toISOString() };
@@ -1251,6 +1326,7 @@ socket.on('game:ended', ({ leaderboard, analytics }) => {
 
   showScreen('final');
 
+  // 1. Top 3 Podium
   const podium = document.getElementById('podium');
   podium.innerHTML = '';
 
@@ -1279,7 +1355,35 @@ socket.on('game:ended', ({ leaderboard, analytics }) => {
     podium.appendChild(step);
   });
 
-  // Render Post-Session Analytics Grid
+  // 2. Remaining Ranks #4 to #10
+  const runnerUps = leaderboard.slice(3, 10);
+  const runnerUpsSec = document.getElementById('finalRunnerUpsSection');
+  const ol = document.getElementById('finalLeaderboard');
+  ol.innerHTML = '';
+
+  if (runnerUps.length > 0) {
+    if (runnerUpsSec) runnerUpsSec.style.display = 'block';
+    runnerUps.forEach((p, idx) => {
+      const li = document.createElement('li');
+      const avatarSvg = window.Avatars ? window.Avatars.getSvg(p.avatar || 'cyber_bot', 28) : '';
+      const flameIcon = p.streak >= 2 && window.Icons ? window.Icons.flame(12) : '';
+
+      li.innerHTML = `
+        <div class="player-name">
+          <span class="rank" style="font-weight:700; color:var(--text-secondary);">#${idx + 4}</span>
+          <span class="avatar-badge-sm">${avatarSvg}</span>
+          <span>${p.name}</span>
+          ${p.streak >= 2 ? `<span class="streak-badge">${flameIcon} Streak ${p.streak}</span>` : ''}
+        </div>
+        <div><strong>${p.score}</strong> <span class="muted" style="font-size:12px;">PTS</span></div>
+      `;
+      ol.appendChild(li);
+    });
+  } else {
+    if (runnerUpsSec) runnerUpsSec.style.display = 'none';
+  }
+
+  // 3. Render Post-Session Analytics Grid Below Leaderboard
   const analyticsSec = document.getElementById('finalAnalyticsSection');
   const analyticsGrid = document.getElementById('finalAnalyticsGrid');
   if (analyticsSec && analyticsGrid && analytics) {
@@ -1313,26 +1417,6 @@ socket.on('game:ended', ({ leaderboard, analytics }) => {
       </div>
     `;
   }
-
-  // Full Leaderboard
-  const ol = document.getElementById('finalLeaderboard');
-  ol.innerHTML = '';
-  leaderboard.forEach((p, idx) => {
-    const li = document.createElement('li');
-    const avatarSvg = window.Avatars ? window.Avatars.getSvg(p.avatar || 'cyber_bot', 28) : '';
-    const flameIcon = p.streak >= 2 && window.Icons ? window.Icons.flame(12) : '';
-
-    li.innerHTML = `
-      <div class="player-name">
-        <span class="rank">#${idx + 1}</span>
-        <span class="avatar-badge-sm">${avatarSvg}</span>
-        <span>${p.name}</span>
-        ${p.streak >= 2 ? `<span class="streak-badge">${flameIcon} Streak ${p.streak}</span>` : ''}
-      </div>
-      <div><strong>${p.score}</strong> <span class="muted" style="font-size:12px;">PTS</span></div>
-    `;
-    ol.appendChild(li);
-  });
 });
 
 // CSV Export Logic

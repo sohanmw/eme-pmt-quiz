@@ -155,31 +155,53 @@
     </div>
   </section>
 
-  <!-- ============ REVEAL ============ -->
+  <!-- ============ SCREEN 1: BAR GRAPH SNAPSHOT ============ -->
   <section id="screen-reveal" class="screen">
     <div class="row between">
-      <span class="pill active">Response Breakdown</span>
+      <span class="pill active">Answer Breakdown</span>
       <span class="multiplier-badge" id="reveal2xBadge" style="display:none;">2X ROUND</span>
     </div>
-    <div class="stage-question" id="revealQText" style="font-size:22px; margin: 12px 0 20px;"></div>
-    <div id="revealBars" style="margin-bottom:28px;"></div>
-    <h3 style="font-size:16px; font-weight:700; margin: 0 0 12px;">Leaderboard</h3>
-    <ol class="leaderboard" id="revealLeaderboard"></ol>
+    <div class="stage-question" id="revealQText" style="font-size:22px; margin: 12px 0 16px;"></div>
+    <div id="revealBars"></div>
     <div style="flex:1;"></div>
-    <button class="btn block" id="nextQuestion" style="font-size:16px; padding:16px; margin-top:20px;">Next Question</button>
+    <button class="btn block primary" id="btnGoToScoreboard" style="font-size:16px; padding:16px; margin-top:20px;">
+      View Scoreboard ➔
+    </button>
   </section>
 
-  <!-- ============ FINAL ============ -->
+  <!-- ============ SCREEN 2: ANIMATED TOP 10 SCOREBOARD ============ -->
+  <section id="screen-scoreboard" class="screen">
+    <div class="row between" style="margin-bottom:8px;">
+      <div>
+        <span class="live-badge" style="font-size:11px; padding:3px 8px;">ROUND STANDINGS</span>
+        <h2 style="font-size:26px; font-weight:800; margin:6px 0 0;">Top 10 Scoreboard</h2>
+      </div>
+      <span class="pill" id="scoreboardRoundCounter" style="font-weight:700;">Question 1 / 10</span>
+    </div>
+    <p class="muted" style="margin:0 0 16px; font-size:13px;">Watch the ranks shift as points are added live.</p>
+
+    <ol class="leaderboard animated-scoreboard" id="revealLeaderboard"></ol>
+    <div style="flex:1;"></div>
+    <button class="btn block" id="nextQuestion" style="font-size:16px; padding:16px; margin-top:20px;">
+      Next Question ➔
+    </button>
+  </section>
+
+  <!-- ============ FINAL: PODIUM (TOP 3) + TOP 4-10 + ANALYTICS ============ -->
   <section id="screen-final" class="screen">
     <div style="text-align:center; margin-bottom:12px;">
       <span class="live-badge" style="background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:#FBBF24;">SESSION COMPLETE</span>
       <h2 style="font-size:28px; font-weight:800; margin:10px 0 0;" id="finalHeading">Final Standings</h2>
     </div>
     
+    <!-- Top 3 Podium -->
     <div class="podium" id="podium"></div>
     
-    <h3 style="font-size:16px; font-weight:700; margin: 20px 0 12px;">Full Leaderboard</h3>
-    <ol class="leaderboard" id="finalLeaderboard"></ol>
+    <!-- Remaining Ranks #4 to #10 -->
+    <div id="finalRunnerUpsSection" style="margin-top:20px;">
+      <h3 style="font-size:16px; font-weight:700; margin: 0 0 12px;">Top 10 Finalists (Ranks 4 – 10)</h3>
+      <ol class="leaderboard" id="finalLeaderboard"></ol>
+    </div>
 
     <!-- Post-Session Analytics Grid (Positioned Below Leaderboard) -->
     <div class="analytics-section" id="finalAnalyticsSection" style="display:none; margin-top:32px;">

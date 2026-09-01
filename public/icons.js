@@ -41,6 +41,9 @@
     circle: (s = 16) => svg('<circle cx="12" cy="12" r="9" fill="currentColor"></circle>', s),
     square: (s = 16) => svg('<rect x="3.5" y="3.5" width="17" height="17" rx="2.5" fill="currentColor"></rect>', s),
 
+    arrowUp: (s = 14) => svg('<line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline>', s),
+    arrowDown: (s = 14) => svg('<line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline>', s),
+
     shape: (index, s = 16) => {
       const shapes = [Icons.triangle, Icons.diamond, Icons.circle, Icons.square];
       return (shapes[index % 4] || shapes[0])(s);
