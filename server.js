@@ -22,8 +22,8 @@ app.get(['/admin', '/admin.html', '/presenter', '/presenter.html', '/host'], (re
 // ---------------------------------------------------------------------
 // Host Authentication REST API
 // ---------------------------------------------------------------------
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@quizlive.com').toLowerCase();
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'sohan@emarketingeye.com').toLowerCase();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Sw123456';
 const VALID_AUTH_TOKENS = new Set();
 
 app.post('/api/auth/login', (req, res) => {

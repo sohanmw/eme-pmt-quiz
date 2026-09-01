@@ -38,7 +38,7 @@ function initHostAuth() {
   if (lockIcon && window.Icons) lockIcon.innerHTML = window.Icons.lock(26);
 
   const token = localStorage.getItem(AUTH_STORAGE_KEY);
-  const cachedEmail = localStorage.getItem(AUTH_EMAIL_KEY) || 'admin@quizlive.com';
+  const cachedEmail = localStorage.getItem(AUTH_EMAIL_KEY) || 'sohan@emarketingeye.com';
 
   if (token) {
     fetch('/api/auth/verify', {
