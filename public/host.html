@@ -62,13 +62,48 @@
       <h1>Quiz Live</h1>
       <span class="live-badge" id="hostLiveBadge" style="display:none;">LIVE SESSION</span>
     </div>
-    <div class="row" style="gap:10px;">
+    <div class="row" style="gap:10px; align-items:center;">
+      <div id="hostAccountBar" style="display:none; align-items:center; gap:8px; font-size:12px;">
+        <span class="muted" id="hostUserEmail" style="font-weight:600;"></span>
+        <button class="btn secondary" id="btnHostLogout" style="padding:3px 8px; font-size:11px; height:24px; border-radius:var(--radius-full);">Sign Out</button>
+      </div>
       <button class="btn-icon" id="btnSound" title="Toggle Sound"></button>
     </div>
   </header>
 
+  <!-- ============ HOST AUTHENTICATION ============ -->
+  <section id="screen-auth" class="screen active" style="min-height:70vh; display:flex; align-items:center; justify-content:center;">
+    <div class="card" style="max-width:440px; width:100%; padding:36px 30px; box-shadow:var(--shadow-card); border-color:rgba(99, 102, 241, 0.35);">
+      <div style="text-align:center; margin-bottom:24px;">
+        <div id="authLockIcon" style="color:var(--primary); margin-bottom:12px; display:inline-flex; align-items:center; justify-content:center; width:52px; height:52px; border-radius:14px; background:rgba(99, 102, 241, 0.12); border:1px solid rgba(99, 102, 241, 0.25);"></div>
+        <h2 style="font-size:24px; font-weight:800; margin:0 0 6px;">Host Portal</h2>
+        <p class="muted" style="margin:0; font-size:13px;">Enter your host credentials to manage quizzes and present live sessions.</p>
+      </div>
+
+      <form id="hostLoginForm">
+        <div style="margin-bottom:16px;">
+          <label class="q-label" for="authEmail">Host Email</label>
+          <input type="email" id="authEmail" required placeholder="admin@quizlive.com" value="admin@quizlive.com" style="width:100%; font-size:14px; padding:12px 14px;">
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div class="row between" style="margin-bottom:4px;">
+            <label class="q-label" for="authPassword" style="margin:0;">Password</label>
+          </div>
+          <input type="password" id="authPassword" required placeholder="••••••••" value="admin123" style="width:100%; font-size:14px; padding:12px 14px;">
+        </div>
+
+        <div id="authErrorMsg" style="display:none; color:#FB7185; font-size:12px; font-weight:600; margin-bottom:14px; text-align:center; background:rgba(244,63,94,0.1); padding:8px 12px; border-radius:var(--radius-sm); border:1px solid rgba(244,63,94,0.25);"></div>
+
+        <button class="btn primary block" type="submit" id="btnHostLogin" style="padding:14px; font-size:15px; font-weight:700;">
+          Sign In to Dashboard
+        </button>
+      </form>
+    </div>
+  </section>
+
   <!-- ============ SETUP ============ -->
-  <section id="screen-setup" class="screen active">
+  <section id="screen-setup" class="screen">
     <!-- Session Toolbar Card -->
     <div class="builder-toolbar-card">
       <div class="builder-toolbar-grid">

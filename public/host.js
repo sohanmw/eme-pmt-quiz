@@ -23,9 +23,116 @@ function showScreen(name) {
 
   const liveBadge = document.getElementById('hostLiveBadge');
   if (liveBadge) {
-    liveBadge.style.display = name === 'setup' ? 'none' : 'inline-flex';
+    liveBadge.style.display = (name === 'setup' || name === 'auth') ? 'none' : 'inline-flex';
   }
 }
+
+// ---------------------------------------------------------------------
+// Host Authentication Management
+// ---------------------------------------------------------------------
+const AUTH_STORAGE_KEY = 'quiz_host_session_token';
+const AUTH_EMAIL_KEY = 'quiz_host_email';
+
+function initHostAuth() {
+  const lockIcon = document.getElementById('authLockIcon');
+  if (lockIcon && window.Icons) lockIcon.innerHTML = window.Icons.lock(26);
+
+  const token = localStorage.getItem(AUTH_STORAGE_KEY);
+  const cachedEmail = localStorage.getItem(AUTH_EMAIL_KEY) || 'admin@quizlive.com';
+
+  if (token) {
+    fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.ok) {
+        onHostAuthenticated(data.email || cachedEmail, token);
+      } else {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        showScreen('auth');
+      }
+    })
+    .catch(() => {
+      // Local network fallback
+      onHostAuthenticated(cachedEmail, token);
+    });
+  } else {
+    showScreen('auth');
+  }
+
+  const form = document.getElementById('hostLoginForm');
+  const errBox = document.getElementById('authErrorMsg');
+  const btnLogin = document.getElementById('btnHostLogin');
+
+  if (form) {
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const emailVal = document.getElementById('authEmail').value.trim();
+      const passVal = document.getElementById('authPassword').value;
+
+      if (errBox) errBox.style.display = 'none';
+      if (btnLogin) {
+        btnLogin.disabled = true;
+        btnLogin.textContent = 'Verifying…';
+      }
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailVal, password: passVal })
+        });
+        const data = await res.json();
+        if (data.ok && data.token) {
+          localStorage.setItem(AUTH_STORAGE_KEY, data.token);
+          localStorage.setItem(AUTH_EMAIL_KEY, data.email || emailVal);
+          onHostAuthenticated(data.email || emailVal, data.token);
+        } else {
+          if (errBox) {
+            errBox.textContent = data.error || 'Invalid credentials. Please try again.';
+            errBox.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        if (errBox) {
+          errBox.textContent = 'Connection error. Please try again.';
+          errBox.style.display = 'block';
+        }
+      } finally {
+        if (btnLogin) {
+          btnLogin.disabled = false;
+          btnLogin.textContent = 'Sign In to Dashboard';
+        }
+      }
+    };
+  }
+
+  const btnLogout = document.getElementById('btnHostLogout');
+  if (btnLogout) {
+    btnLogout.onclick = () => {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem(AUTH_EMAIL_KEY);
+      const accountBar = document.getElementById('hostAccountBar');
+      if (accountBar) accountBar.style.display = 'none';
+      showScreen('auth');
+    };
+  }
+}
+
+function onHostAuthenticated(email) {
+  const accountBar = document.getElementById('hostAccountBar');
+  const userEmailEl = document.getElementById('hostUserEmail');
+  if (accountBar && userEmailEl) {
+    userEmailEl.textContent = email;
+    accountBar.style.display = 'inline-flex';
+  }
+  showScreen('setup');
+}
+
+initHostAuth();
 
 const btnSound = document.getElementById('btnSound');
 function updateSoundBtn() {

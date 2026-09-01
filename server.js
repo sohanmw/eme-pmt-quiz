@@ -19,6 +19,45 @@ app.get(['/admin', '/admin.html', '/presenter', '/presenter.html', '/host'], (re
   res.redirect('/host.html');
 });
 
+// ---------------------------------------------------------------------
+// Host Authentication REST API
+// ---------------------------------------------------------------------
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@quizlive.com').toLowerCase();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const VALID_AUTH_TOKENS = new Set();
+
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ ok: false, error: 'Email and password are required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail === ADMIN_EMAIL && String(password).trim() === ADMIN_PASSWORD) {
+      const token = 'token_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+      VALID_AUTH_TOKENS.add(token);
+      return res.json({ ok: true, token, email: ADMIN_EMAIL });
+    }
+
+    return res.status(401).json({ ok: false, error: 'Invalid email or password.' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/auth/verify', (req, res) => {
+  try {
+    const { token } = req.body || {};
+    if (token && VALID_AUTH_TOKENS.has(token)) {
+      return res.json({ ok: true, email: ADMIN_EMAIL });
+    }
+    return res.json({ ok: false });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 app.use(express.static('public'));
 
 const QUIZZES_DIR = path.join(__dirname, 'saved_quizzes');
