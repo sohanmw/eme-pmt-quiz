@@ -78,6 +78,7 @@
         </div>
         <div class="builder-toolbar-actions">
           <button class="btn secondary" id="btnOpenLibrary">Library</button>
+          <button class="btn secondary" id="btnOpenCsvModal">Import Spreadsheet (CSV)</button>
           <button class="btn secondary" id="btnSampleTrivia">Load Sample Trivia</button>
         </div>
       </div>
@@ -101,6 +102,41 @@
     <p id="setupError" class="muted" style="color:var(--false-border); margin-top:10px; text-align:center; font-weight:600;"></p>
   </section>
 
+  <!-- ============ CSV / SPREADSHEET IMPORT MODAL ============ -->
+  <div class="modal-overlay" id="modalCsvImport" style="display:none;">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="row between" style="margin-bottom:12px;">
+        <h3 style="font-size:18px; font-weight:800; margin:0;">Import Spreadsheet (Excel / CSV)</h3>
+        <button class="btn-icon" id="btnCloseCsvModal" style="font-size:18px; width:28px; height:28px;">✕</button>
+      </div>
+      <p class="muted" style="font-size:13px; margin:0 0 16px;">
+        Upload a <code>.csv</code> / <code>.tsv</code> file or paste cells directly from Google Sheets / Excel.
+      </p>
+
+      <div class="modal-csv-dropzone" id="csvDropzone">
+        <div style="font-size:24px; margin-bottom:6px;">📊</div>
+        <strong style="font-size:14px; color:var(--text-primary);">Click or Drag & Drop .CSV file</strong>
+        <p class="muted" style="font-size:11px; margin:4px 0 0;">Supports standard Kahoot and Quiz formats</p>
+        <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" style="display:none;">
+      </div>
+
+      <div class="row between" style="margin-bottom:6px;">
+        <label class="q-label" style="margin:0;">Or Paste Table Rows Directly:</label>
+        <button class="btn secondary" id="btnDownloadCsvTemplate" style="padding:2px 8px; font-size:11px; height:22px; border-radius:var(--radius-full);">
+          Download Sample Template (.csv)
+        </button>
+      </div>
+      <textarea class="csv-textarea" id="csvTextInput" placeholder="Question,Option 1,Option 2,Option 3,Option 4,Correct Option (1-4 or text),Time (sec),2x Points (yes/no)&#10;What is the capital of Japan?,Tokyo,Kyoto,Osaka,Nagoya,1,20,no&#10;The sun rises in the east.,True,False,,,1,15,yes"></textarea>
+
+      <div id="csvParseStatus" style="font-size:12px; margin-top:8px; font-weight:600;"></div>
+
+      <div class="row between" style="margin-top:20px; gap:12px;">
+        <button class="btn secondary" id="btnCancelCsvImport" style="flex:1;">Cancel</button>
+        <button class="btn primary" id="btnConfirmCsvImport" style="flex:2;" disabled>Import Questions (0)</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ LOBBY ============ -->
   <section id="screen-lobby" class="screen">
     <div class="card row between" style="align-items:center; flex-wrap:wrap; gap:28px;">
@@ -122,6 +158,21 @@
     <button class="btn block" id="startGame" style="font-size:16px; padding:16px; margin-top:24px;" disabled>
       Waiting for participants to join…
     </button>
+  </section>
+
+  <!-- ============ GET READY (3s Question Preview Countdown) ============ -->
+  <section id="screen-get-ready" class="screen">
+    <div class="row between">
+      <span class="pill active" id="getReadyCounter">Question 1 / 1</span>
+      <span class="multiplier-badge" id="getReady2xBadge" style="display:none;">2X DOUBLE POINTS</span>
+    </div>
+    <div class="get-ready-wrapper">
+      <div class="get-ready-circle">
+        <span id="getReadyCountdown">3</span>
+      </div>
+      <h2 class="get-ready-prompt" id="getReadyPrompt">Question prompt preview...</h2>
+      <p class="muted" style="margin-top:16px; font-size:14px;">Get ready to choose your answer on your device!</p>
+    </div>
   </section>
 
   <!-- ============ QUESTION (presenting) ============ -->

@@ -63,6 +63,18 @@
     </div>
   </section>
 
+  <!-- ============ GET READY ============ -->
+  <section id="screen-get-ready" class="screen center">
+    <div style="margin: auto 0; width:100%;">
+      <div class="card" style="padding:36px 20px; text-align:center;">
+        <div style="font-size:40px; margin-bottom:12px; animation:countdownPulse 1s infinite alternate;">⚡</div>
+        <span class="pill active" id="pGetReadyCounter" style="margin-bottom:10px;">Question 1</span>
+        <h2 style="font-size:24px; font-weight:800; margin:8px 0 10px;">Get Ready!</h2>
+        <p class="muted" style="margin:0; font-size:14px;">Look up at the screen to read the question.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ ANSWERING ============ -->
   <section id="screen-answer" class="screen">
     <div class="row between" style="margin-bottom:8px;">
@@ -96,9 +108,19 @@
     <div style="margin: auto 0; width:100%;">
       <div id="resultAvatarBox" style="width:72px; height:72px; margin: 0 auto 12px; display:flex; align-items:center; justify-content:center;"></div>
       <h2 id="resultHeadline" style="font-size:28px; font-weight:800; margin:0 0 8px;"></h2>
-      <p class="muted" id="resultDetail" style="margin-bottom:20px; font-size:15px;"></p>
-      <div class="pill active" id="resultScore" style="font-size:16px; padding:10px 20px; font-weight:700; margin-bottom:12px;"></div>
-      <div id="resultStreakBadge" style="display:none; margin-top:8px;"></div>
+      <p class="muted" id="resultDetail" style="margin-bottom:16px; font-size:15px;"></p>
+      <div class="pill active" id="resultScore" style="font-size:16px; padding:10px 20px; font-weight:700; margin-bottom:8px;"></div>
+      <div id="resultStreakBadge" style="display:none; margin-top:6px;"></div>
+
+      <!-- Kahoot Motivational Micro-Context Card -->
+      <div id="resultMotivationCard" class="motivation-card" style="display:none;">
+        <div class="motivation-header">
+          <span class="motivation-rank-badge" id="motivationRankBadge">Rank #2</span>
+          <span id="motivationRankShiftBadge"></span>
+        </div>
+        <div class="motivation-headline" id="motivationHeadline">You're in 2nd Place!</div>
+        <div class="motivation-sub" id="motivationSub">Only 120 PTS behind Sarah!</div>
+      </div>
     </div>
   </section>
 

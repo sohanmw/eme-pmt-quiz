@@ -783,8 +783,267 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeSampleModal();
     if (libraryModal) libraryModal.style.display = 'none';
+    const modalCsvEl = document.getElementById('modalCsvImport');
+    if (modalCsvEl) modalCsvEl.style.display = 'none';
   }
 });
+
+// ---------------------------------------------------------------------
+// CSV & Spreadsheet Import Modal Logic
+// ---------------------------------------------------------------------
+const modalCsv = document.getElementById('modalCsvImport');
+const btnOpenCsv = document.getElementById('btnOpenCsvModal');
+const btnCloseCsv = document.getElementById('btnCloseCsvModal');
+const btnCancelCsv = document.getElementById('btnCancelCsvImport');
+const btnConfirmCsv = document.getElementById('btnConfirmCsvImport');
+const btnDownloadTemplate = document.getElementById('btnDownloadCsvTemplate');
+const csvDropzone = document.getElementById('csvDropzone');
+const csvFileInput = document.getElementById('csvFileInput');
+const csvTextInput = document.getElementById('csvTextInput');
+const csvParseStatus = document.getElementById('csvParseStatus');
+
+let parsedCsvQuestions = [];
+
+function openCsvModal() {
+  if (modalCsv) modalCsv.style.display = 'flex';
+  if (csvTextInput) csvTextInput.value = '';
+  if (csvParseStatus) csvParseStatus.innerHTML = '';
+  parsedCsvQuestions = [];
+  if (btnConfirmCsv) {
+    btnConfirmCsv.disabled = true;
+    btnConfirmCsv.textContent = 'Import Questions (0)';
+  }
+}
+
+function closeCsvModal() {
+  if (modalCsv) modalCsv.style.display = 'none';
+}
+
+if (btnOpenCsv) btnOpenCsv.onclick = openCsvModal;
+if (btnCloseCsv) btnCloseCsv.onclick = closeCsvModal;
+if (btnCancelCsv) btnCancelCsv.onclick = closeCsvModal;
+
+// Template download
+if (btnDownloadTemplate) {
+  btnDownloadTemplate.onclick = () => {
+    const templateContent = `Question,Option 1,Option 2,Option 3,Option 4,Correct Option (1-4 or text),Time (sec),2X Points (yes/no)
+"What is the capital of Japan?","Tokyo","Kyoto","Osaka","Nagoya","1","20","no"
+"Which planet is closest to the Sun?","Venus","Mercury","Earth","Mars","Mercury","15","yes"
+"The sun rises in the east.","True","False","","","True","10","no"
+"Which HTML tag is used for javascript?","<js>","<scripting>","<script>","<javascript>","3","20","no"
+"A byte consists of 8 bits.","True","False","","","1","10","yes"`;
+    const blob = new Blob([templateContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'quiz_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+}
+
+// Robust CSV Parser (supports quotes, commas, tabs, headers)
+function parseCsvText(rawText) {
+  const text = rawText.trim();
+  if (!text) return [];
+
+  // Split lines safely handling quotes
+  const lines = [];
+  let curLine = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      inQuotes = !inQuotes;
+      curLine += c;
+    } else if ((c === '\n' || c === '\r') && !inQuotes) {
+      if (curLine.trim()) lines.push(curLine.trim());
+      curLine = '';
+      if (c === '\r' && text[i+1] === '\n') i++;
+    } else {
+      curLine += c;
+    }
+  }
+  if (curLine.trim()) lines.push(curLine.trim());
+
+  const parsedRows = [];
+  for (const line of lines) {
+    let delim = ',';
+    if (line.includes('\t') && (!line.includes(',') || line.split('\t').length > line.split(',').length)) {
+      delim = '\t';
+    } else if (line.includes(';') && (!line.includes(',') || line.split(';').length > line.split(',').length)) {
+      delim = ';';
+    }
+
+    const cols = [];
+    let curCol = '';
+    let inColQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        inColQuotes = !inColQuotes;
+      } else if (c === delim && !inColQuotes) {
+        cols.push(curCol.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+        curCol = '';
+      } else {
+        curCol += c;
+      }
+    }
+    cols.push(curCol.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+    parsedRows.push(cols);
+  }
+
+  if (parsedRows.length === 0) return [];
+
+  let startIdx = 0;
+  const firstRowLower = parsedRows[0].map(s => s.toLowerCase());
+  if (firstRowLower.some(h => h.includes('question') || h.includes('prompt') || h.includes('option'))) {
+    startIdx = 1;
+  }
+
+  const results = [];
+  for (let r = startIdx; r < parsedRows.length; r++) {
+    const row = parsedRows[r];
+    if (!row || row.length < 2 || !row[0]) continue;
+
+    const qText = row[0].trim();
+    if (!qText) continue;
+
+    const opt1 = row[1] ? row[1].trim() : '';
+    const opt2 = row[2] ? row[2].trim() : '';
+    const opt3 = row[3] ? row[3].trim() : '';
+    const opt4 = row[4] ? row[4].trim() : '';
+    const correctRaw = row[5] ? row[5].trim() : (row[3] && !row[4] ? row[3].trim() : '1');
+    const timeRaw = row[6] ? parseInt(row[6].trim(), 10) : 20;
+    const doubleRaw = row[7] ? row[7].trim().toLowerCase() : '';
+
+    const isTf = (!opt3 && !opt4 && (opt1.toLowerCase() === 'true' || opt1.toLowerCase() === 'false' || opt2.toLowerCase() === 'false' || opt2.toLowerCase() === 'true'));
+
+    let correctIndex = 0;
+    let options = [];
+    if (isTf) {
+      options = [{ text: 'True' }, { text: 'False' }];
+      const crLower = correctRaw.toLowerCase();
+      if (crLower === '2' || crLower === 'false' || crLower === 'f' || crLower === 'b') {
+        correctIndex = 1;
+      } else {
+        correctIndex = 0;
+      }
+    } else {
+      const validOpts = [opt1, opt2, opt3, opt4].filter(o => o);
+      if (validOpts.length < 2) continue;
+      options = [
+        { text: opt1 || 'Option 1' },
+        { text: opt2 || 'Option 2' },
+        { text: opt3 || 'Option 3' },
+        { text: opt4 || 'Option 4' },
+      ];
+
+      const crLower = correctRaw.toLowerCase();
+      if (crLower === '1' || crLower === 'a' || crLower === opt1.toLowerCase()) correctIndex = 0;
+      else if (crLower === '2' || crLower === 'b' || crLower === opt2.toLowerCase()) correctIndex = 1;
+      else if (crLower === '3' || crLower === 'c' || crLower === opt3.toLowerCase()) correctIndex = 2;
+      else if (crLower === '4' || crLower === 'd' || crLower === opt4.toLowerCase()) correctIndex = 3;
+      else {
+        const matchIdx = options.findIndex(o => o.text.toLowerCase() === crLower);
+        correctIndex = matchIdx >= 0 ? matchIdx : 0;
+      }
+    }
+
+    const seconds = !isNaN(timeRaw) && timeRaw >= 5 && timeRaw <= 120 ? timeRaw : 20;
+    const isDoublePoints = doubleRaw === 'yes' || doubleRaw === 'true' || doubleRaw === '1' || doubleRaw === '2x';
+
+    results.push({
+      id: `q_${Date.now()}_${r}`,
+      type: isTf ? 'tf' : 'mcq',
+      text: qText,
+      options,
+      correctIndex,
+      seconds,
+      isDoublePoints,
+    });
+  }
+
+  return results;
+}
+
+function updateCsvParsedState() {
+  const raw = csvTextInput ? csvTextInput.value : '';
+  parsedCsvQuestions = parseCsvText(raw);
+  if (parsedCsvQuestions.length > 0) {
+    if (csvParseStatus) {
+      csvParseStatus.innerHTML = `<span style="color:#34D399;">✓ Successfully detected ${parsedCsvQuestions.length} question(s) ready to import.</span>`;
+    }
+    if (btnConfirmCsv) {
+      btnConfirmCsv.disabled = false;
+      btnConfirmCsv.textContent = `Import ${parsedCsvQuestions.length} Questions`;
+    }
+  } else {
+    if (csvParseStatus) {
+      csvParseStatus.innerHTML = raw.trim() ? `<span style="color:#FB7185;">Could not detect valid questions. Check columns format.</span>` : '';
+    }
+    if (btnConfirmCsv) {
+      btnConfirmCsv.disabled = true;
+      btnConfirmCsv.textContent = 'Import Questions (0)';
+    }
+  }
+}
+
+if (csvTextInput) {
+  csvTextInput.oninput = updateCsvParsedState;
+}
+
+// File Upload / Dropzone
+if (csvDropzone && csvFileInput) {
+  csvDropzone.onclick = () => csvFileInput.click();
+  csvFileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (csvTextInput) {
+        csvTextInput.value = evt.target.result;
+        updateCsvParsedState();
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  csvDropzone.ondragover = (e) => {
+    e.preventDefault();
+    csvDropzone.classList.add('dragover');
+  };
+  csvDropzone.ondragleave = () => {
+    csvDropzone.classList.remove('dragover');
+  };
+  csvDropzone.ondrop = (e) => {
+    e.preventDefault();
+    csvDropzone.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        if (csvTextInput) {
+          csvTextInput.value = evt.target.result;
+          updateCsvParsedState();
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+}
+
+// Confirm Import
+if (btnConfirmCsv) {
+  btnConfirmCsv.onclick = () => {
+    if (parsedCsvQuestions.length === 0) return;
+    questions = questions.concat(parsedCsvQuestions);
+    renderQuestionList();
+    closeCsvModal();
+  };
+}
 
 // Starts with NO questions by default (empty state)
 questions = [];
@@ -1071,8 +1330,41 @@ socket.on('timer:extend', ({ remainingMs, totalLimitMs }) => {
 let prevLeaderboardMap = new Map();
 let currentQuestionIndex = 0;
 let totalQuestionsCount = 0;
+let getReadyInterval = null;
+
+socket.on('question:get_ready', (q) => {
+  if (hostTimerRaf) cancelAnimationFrame(hostTimerRaf);
+  if (getReadyInterval) clearInterval(getReadyInterval);
+
+  showScreen('get-ready');
+  document.getElementById('getReadyCounter').textContent = `Question ${q.index + 1} / ${q.total}`;
+  document.getElementById('getReadyPrompt').textContent = q.text;
+
+  const badge2x = document.getElementById('getReady2xBadge');
+  if (badge2x) {
+    badge2x.style.display = q.isDoublePoints ? 'inline-flex' : 'none';
+  }
+
+  const countdownEl = document.getElementById('getReadyCountdown');
+  let remainingSecs = Math.round((q.durationMs || 3000) / 1000);
+  if (countdownEl) countdownEl.textContent = String(remainingSecs);
+
+  if (window.QuizAudio) window.QuizAudio.playTick(1);
+
+  getReadyInterval = setInterval(() => {
+    remainingSecs -= 1;
+    if (remainingSecs > 0) {
+      if (countdownEl) countdownEl.textContent = String(remainingSecs);
+      if (window.QuizAudio) window.QuizAudio.playTick(1 - (remainingSecs / 3));
+    } else {
+      if (countdownEl) countdownEl.textContent = '⚡';
+      clearInterval(getReadyInterval);
+    }
+  }, 1000);
+});
 
 socket.on('question:show', (q) => {
+  if (getReadyInterval) clearInterval(getReadyInterval);
   currentQuestionMeta = q;
   currentQuestionIndex = q.index;
   totalQuestionsCount = q.total;

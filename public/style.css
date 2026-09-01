@@ -1337,3 +1337,162 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   0% { opacity: 0; transform: scale(0.94) translateY(8px); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+/* =====================================================================
+   KAHOOT 3-SECOND "GET READY" COUNTDOWN SCREEN
+   ===================================================================== */
+.get-ready-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 20px;
+  min-height: 380px;
+}
+
+.get-ready-circle {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, rgba(99, 102, 241, 0.1) 70%);
+  border: 3px solid #38BDF8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 54px;
+  font-weight: 900;
+  color: #38BDF8;
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.3);
+  animation: countdownPulse 1s ease-in-out infinite;
+  margin-bottom: 24px;
+}
+
+@keyframes countdownPulse {
+  0% { transform: scale(0.92); opacity: 0.85; }
+  50% { transform: scale(1.08); opacity: 1; box-shadow: 0 0 45px rgba(56, 189, 248, 0.8), inset 0 0 25px rgba(56, 189, 248, 0.5); }
+  100% { transform: scale(0.92); opacity: 0.85; }
+}
+
+.get-ready-prompt {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.3;
+  max-width: 680px;
+  margin: 12px 0 0;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+/* =====================================================================
+   PLAYER MOTIVATIONAL MICRO-FEEDBACK CARD
+   ===================================================================== */
+.motivation-card {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  margin: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  animation: slideUpFade 0.4s ease-out;
+}
+
+.motivation-card.podium-1 {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), var(--bg-surface-elevated));
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.motivation-card.podium-2 {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.15), var(--bg-surface-elevated));
+  border-color: rgba(148, 163, 184, 0.4);
+}
+.motivation-card.podium-3 {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.15), var(--bg-surface-elevated));
+  border-color: rgba(217, 119, 6, 0.4);
+}
+
+.motivation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.motivation-rank-badge {
+  font-size: 13px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+}
+
+.motivation-headline {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.motivation-sub {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* =====================================================================
+   CSV / SPREADSHEET IMPORT MODAL
+   ===================================================================== */
+.modal-csv-dropzone {
+  border: 2px dashed var(--border-muted);
+  border-radius: var(--radius-md);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+.modal-csv-dropzone:hover, .modal-csv-dropzone.dragover {
+  border-color: #38BDF8;
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.csv-textarea {
+  width: 100%;
+  height: 120px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 10px;
+  background: var(--bg-surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  resize: vertical;
+}
+
+.csv-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 12px;
+  max-height: 180px;
+  overflow-y: auto;
+  display: block;
+}
+.csv-preview-table th, .csv-preview-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+}
+.csv-preview-table th {
+  color: var(--text-muted);
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  background: var(--bg-surface);
+}

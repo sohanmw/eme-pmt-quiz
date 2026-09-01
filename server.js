@@ -344,6 +344,28 @@ function computeSessionAnalytics(game) {
   };
 }
 
+function leaderboardWithStandings(game) {
+  const list = leaderboard(game);
+  return list.map((p, idx) => {
+    const rank = idx + 1;
+    const prevRank = p.prevRank !== undefined ? p.prevRank : rank;
+    const rankDelta = prevRank - rank; // positive = climbed spots!
+    const nextPlayer = idx > 0 ? list[idx - 1] : null;
+    const pointsBehindNext = nextPlayer ? nextPlayer.score - p.score : 0;
+    const pointsBehindLeader = list[0] ? list[0].score - p.score : 0;
+
+    return {
+      ...p,
+      rank,
+      prevRank,
+      rankDelta,
+      nextPlayerName: nextPlayer ? nextPlayer.name : null,
+      pointsBehindNext,
+      pointsBehindLeader,
+    };
+  });
+}
+
 function timeUpQuestion(pin, allAnswered = false) {
   const game = games[pin];
   if (!game || game.state !== 'question') return;
@@ -354,7 +376,7 @@ function timeUpQuestion(pin, allAnswered = false) {
 
 function endQuestion(pin) {
   const game = games[pin];
-  if (!game || (game.state !== 'question' && game.state !== 'time_up')) return;
+  if (!game || (game.state !== 'question' && game.state !== 'time_up' && game.state !== 'get_ready')) return;
   clearGameTimer(game);
   game.state = 'reveal';
   game.timerPaused = false;
@@ -369,11 +391,16 @@ function endQuestion(pin) {
     }
   });
 
+  const lb = leaderboardWithStandings(game);
+  lb.forEach((p) => {
+    if (game.players[p.id]) game.players[p.id].prevRank = p.rank;
+  });
+
   io.to(pin).emit('question:reveal', {
     correctIndex: q.correctIndex,
     isDoublePoints: !!q.isDoublePoints,
     counts,
-    leaderboard: leaderboard(game),
+    leaderboard: lb,
   });
 }
 
@@ -383,11 +410,9 @@ function startQuestion(pin) {
   const q = currentQuestion(game);
   if (!q) return endGame(pin);
 
-  game.state = 'question';
-  game.questionStartedAt = Date.now();
-  game.totalLimitMs = q.limitMs || 20000;
-  game.remainingMs = game.totalLimitMs;
-  game.timerPaused = false;
+  clearGameTimer(game);
+  game.state = 'get_ready';
+  game.questionStartedAt = null;
 
   Object.values(game.players).forEach((p) => {
     p.answeredThisRound = false;
@@ -395,11 +420,33 @@ function startQuestion(pin) {
   });
 
   const activePlayers = Object.values(game.players).filter((p) => p.connected !== false);
-  io.to(pin).emit('question:show', currentQuestionPayload(game));
-  io.to(pin).emit('question:progress', { answered: 0, total: activePlayers.length });
 
-  clearGameTimer(game);
-  game.timer = setTimeout(() => timeUpQuestion(pin), game.remainingMs + 300);
+  io.to(pin).emit('question:get_ready', {
+    index: game.currentIndex,
+    total: game.questions.length,
+    text: q.text,
+    image: q.image || null,
+    type: q.type,
+    isDoublePoints: !!q.isDoublePoints,
+    durationMs: 3000,
+    playerCount: activePlayers.length,
+  });
+
+  // After 3-second "Get Ready" teaser, transition to active question
+  game.timer = setTimeout(() => {
+    if (!games[pin] || game.state !== 'get_ready') return;
+    game.state = 'question';
+    game.questionStartedAt = Date.now();
+    game.totalLimitMs = q.limitMs || 20000;
+    game.remainingMs = game.totalLimitMs;
+    game.timerPaused = false;
+
+    io.to(pin).emit('question:show', currentQuestionPayload(game));
+    io.to(pin).emit('question:progress', { answered: 0, total: activePlayers.length });
+
+    clearGameTimer(game);
+    game.timer = setTimeout(() => timeUpQuestion(pin), game.remainingMs + 300);
+  }, 3000);
 }
 
 function endGame(pin) {
@@ -410,7 +457,7 @@ function endGame(pin) {
 
   const analytics = computeSessionAnalytics(game);
   io.to(pin).emit('game:ended', {
-    leaderboard: leaderboard(game),
+    leaderboard: leaderboardWithStandings(game),
     analytics,
   });
 }

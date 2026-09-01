@@ -389,6 +389,14 @@ function handleShowQuestion(q) {
   startPlayerTimer(q.limitMs, q.totalLimitMs);
 }
 
+socket.on('question:get_ready', (q) => {
+  if (pTimerRaf) cancelAnimationFrame(pTimerRaf);
+  showScreen('get-ready');
+  const counterEl = document.getElementById('pGetReadyCounter');
+  if (counterEl) counterEl.textContent = `Question ${q.index + 1} of ${q.total}`;
+  if (q.isDoublePoints) vibrate([30, 40, 30]);
+});
+
 socket.on('question:show', (q) => {
   handleShowQuestion(q);
 });
@@ -416,7 +424,7 @@ socket.on('question:timeUp', () => {
 });
 
 // ---------------------------------------------------------------------
-// Round Results & Feedback with Haptics
+// Round Results & Feedback with Motivational Context & Haptics
 // ---------------------------------------------------------------------
 socket.on('question:reveal', ({ correctIndex, isDoublePoints, leaderboard }) => {
   if (pTimerRaf) cancelAnimationFrame(pTimerRaf);
@@ -470,6 +478,52 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, leaderboard }) => 
     streakBadge.style.display = 'none';
     vibrate(80);
     if (window.QuizAudio) window.QuizAudio.playWrong();
+  }
+
+  // Render Motivational Context Card
+  const motivCard = document.getElementById('resultMotivationCard');
+  if (motivCard && me) {
+    motivCard.style.display = 'flex';
+    const rankBadge = document.getElementById('motivationRankBadge');
+    const shiftBadge = document.getElementById('motivationRankShiftBadge');
+    const headEl = document.getElementById('motivationHeadline');
+    const subEl = document.getElementById('motivationSub');
+
+    motivCard.className = 'motivation-card';
+    if (me.rank === 1) {
+      motivCard.classList.add('podium-1');
+      if (rankBadge) rankBadge.textContent = '👑 1st Place';
+      if (headEl) headEl.textContent = "Dominating the Board!";
+      if (subEl) subEl.textContent = "You are leading the session with the top score!";
+    } else if (me.rank === 2) {
+      motivCard.classList.add('podium-2');
+      if (rankBadge) rankBadge.textContent = '🥈 2nd Place';
+      if (headEl) headEl.textContent = "Podium Position!";
+      if (subEl) subEl.textContent = `Only ${me.pointsBehindNext || 0} PTS behind ${me.nextPlayerName || '1st place'}!`;
+    } else if (me.rank === 3) {
+      motivCard.classList.add('podium-3');
+      if (rankBadge) rankBadge.textContent = '🥉 3rd Place';
+      if (headEl) headEl.textContent = "On the Podium!";
+      if (subEl) subEl.textContent = `Only ${me.pointsBehindNext || 0} PTS behind ${me.nextPlayerName || '2nd place'}!`;
+    } else {
+      if (rankBadge) rankBadge.textContent = `Rank #${me.rank}`;
+      if (headEl) {
+        headEl.textContent = me.rankDelta > 0 ? `Climbed ${me.rankDelta} Spot${me.rankDelta > 1 ? 's' : ''}! 🔥` : `Rank #${me.rank} of ${leaderboard.length}`;
+      }
+      if (subEl) {
+        subEl.textContent = me.nextPlayerName ? `${me.nextPlayerName} is ${me.pointsBehindNext || 0} PTS ahead. Keep pushing!` : "Keep answering fast to climb into the top ranks!";
+      }
+    }
+
+    if (shiftBadge) {
+      if (me.rankDelta > 0) {
+        shiftBadge.innerHTML = `<span class="rank-shift up">▲ +${me.rankDelta}</span>`;
+      } else if (me.rankDelta < 0) {
+        shiftBadge.innerHTML = `<span class="rank-shift down">▼ ${me.rankDelta}</span>`;
+      } else {
+        shiftBadge.innerHTML = '';
+      }
+    }
   }
 
   showScreen('result');
