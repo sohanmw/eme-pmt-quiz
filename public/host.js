@@ -1453,100 +1453,81 @@ socket.on('question:timeUp', ({ allAnswered } = {}) => {
 // ---------------------------------------------------------------------
 // SCREEN 1: Solid Vibrant Kahoot Bar Graph Snapshot
 // ---------------------------------------------------------------------
-socket.on('question:reveal', (data = {}) => {
+socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboard }) => {
   if (hostTimerRaf) cancelAnimationFrame(hostTimerRaf);
   if (window.QuizAudio) window.QuizAudio.stopAllMusic();
 
-  const { question, correctIndex, isDoublePoints, counts, leaderboard } = data || {};
-  if (question) {
-    currentQuestionMeta = question;
-    currentQuestionIndex = question.index;
-    totalQuestionsCount = question.total;
-  }
-
   showScreen('reveal');
-  const q = currentQuestionMeta || {};
-  const qTextEl = document.getElementById('revealQText');
-  if (qTextEl) qTextEl.textContent = q.text || 'Question Results';
+  document.getElementById('revealQText').textContent = currentQuestionMeta ? currentQuestionMeta.text : '';
 
   const reveal2x = document.getElementById('reveal2xBadge');
   if (reveal2x) reveal2x.style.display = isDoublePoints ? 'inline-flex' : 'none';
 
   const bars = document.getElementById('revealBars');
-  if (!bars) return;
   bars.innerHTML = '';
+  const totalVotes = counts.reduce((a, b) => a + b, 0);
 
-  const options = (q && Array.isArray(q.options) && q.options.length) 
-    ? q.options.map((o) => (typeof o === 'string' ? o : (o ? (o.text || '') : '')))
-    : ['Option 1', 'Option 2', 'Option 3', 'Option 4'];
+  if (currentQuestionMeta) {
+    const isTf = currentQuestionMeta.type === 'tf';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'kahoot-bars-wrapper';
 
-  const isTf = q.type === 'tf';
-  const wrapper = document.createElement('div');
-  wrapper.className = 'kahoot-bars-wrapper';
+    const grid = document.createElement('div');
+    grid.className = `kahoot-bars-grid ${isTf ? 'tf-mode' : ''}`;
 
-  const grid = document.createElement('div');
-  grid.className = `kahoot-bars-grid ${isTf ? 'tf-mode' : ''}`;
+    const maxCount = Math.max(...counts, 1);
 
-  const safeCounts = counts || new Array(options.length).fill(0);
-  const maxCount = Math.max(...safeCounts, 1);
-  const hostFillTargets = [];
+    currentQuestionMeta.options.forEach((text, i) => {
+      const isCorrect = i === correctIndex;
+      const count = counts[i] || 0;
+      // Solid height: if 0 votes => 0%, if >0 votes => proportional height
+      const fillHeightPct = maxCount > 0 && count > 0 ? Math.max(25, Math.round((count / maxCount) * 92)) : 0;
 
-  options.forEach((text, i) => {
-    const isCorrect = i === correctIndex;
-    const count = safeCounts[i] || 0;
-    const fillHeightPct = maxCount > 0 && count > 0 ? Math.max(25, Math.round((count / maxCount) * 92)) : 0;
+      const col = document.createElement('div');
+      col.className = `kahoot-bar-column ${isCorrect ? 'is-correct' : (count === 0 ? '' : 'is-wrong')}`;
 
-    const col = document.createElement('div');
-    col.className = `kahoot-bar-column ${isCorrect ? 'is-correct' : (count === 0 ? '' : 'is-wrong')}`;
+      const countWrap = document.createElement('div');
+      countWrap.className = 'kahoot-bar-count-wrap';
+      if (isCorrect) {
+        countWrap.innerHTML = `
+          <span class="kahoot-bar-check">✓</span>
+          <span class="kahoot-bar-count" style="color:#34D399;">${count}</span>
+        `;
+      } else {
+        countWrap.innerHTML = `
+          <span class="kahoot-bar-count">${count}</span>
+        `;
+      }
 
-    const countWrap = document.createElement('div');
-    countWrap.className = 'kahoot-bar-count-wrap';
-    if (isCorrect) {
-      countWrap.innerHTML = `
-        <span class="kahoot-bar-check">✓</span>
-        <span class="kahoot-bar-count" style="color:#34D399;">${count}</span>
-      `;
-    } else {
-      countWrap.innerHTML = `
-        <span class="kahoot-bar-count">${count}</span>
-      `;
-    }
+      const track = document.createElement('div');
+      track.className = 'kahoot-bar-track';
 
-    const track = document.createElement('div');
-    track.className = 'kahoot-bar-track';
-
-    const fill = document.createElement('div');
-    const optClass = isTf ? (i === 0 ? 'tf-true' : 'tf-false') : OPT_CLASSES[i];
-    fill.className = `kahoot-bar-fill ${optClass}`;
-    fill.style.height = `${fillHeightPct}%`;
-
-    track.appendChild(fill);
-    hostFillTargets.push({ fill, fillHeightPct });
-
-    const footer = document.createElement('div');
-    footer.className = `kahoot-bar-footer ${optClass}`;
-    if (isTf) {
-      const checkOrCross = i === 0 && window.Icons ? window.Icons.check(14) : (window.Icons ? window.Icons.cross(14) : (i === 0 ? '✓' : '✕'));
-      footer.innerHTML = `<span class="shape-icon">${checkOrCross}</span> <span>${text}</span>`;
-    } else {
-      const shapeSvg = window.Icons ? window.Icons.shape(i, 16) : LETTERS[i];
-      footer.innerHTML = `<span class="shape-icon" style="font-size:16px;">${shapeSvg}</span> <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;" title="${text}">${text}</span>`;
-    }
-
-    col.appendChild(countWrap);
-    col.appendChild(track);
-    col.appendChild(footer);
-    grid.appendChild(col);
-  });
-
-  wrapper.appendChild(grid);
-  bars.appendChild(wrapper);
-
-  requestAnimationFrame(() => {
-    hostFillTargets.forEach(({ fill, fillHeightPct }) => {
+      const fill = document.createElement('div');
+      const optClass = isTf ? (i === 0 ? 'tf-true' : 'tf-false') : OPT_CLASSES[i];
+      fill.className = `kahoot-bar-fill ${optClass}`;
       fill.style.height = `${fillHeightPct}%`;
+
+      track.appendChild(fill);
+
+      const footer = document.createElement('div');
+      footer.className = `kahoot-bar-footer ${optClass}`;
+      if (isTf) {
+        const checkOrCross = i === 0 && window.Icons ? window.Icons.check(14) : (window.Icons ? window.Icons.cross(14) : (i === 0 ? '✓' : '✕'));
+        footer.innerHTML = `<span class="shape-icon">${checkOrCross}</span> <span>${text}</span>`;
+      } else {
+        const shapeSvg = window.Icons ? window.Icons.shape(i, 16) : LETTERS[i];
+        footer.innerHTML = `<span class="shape-icon" style="font-size:16px;">${shapeSvg}</span> <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;" title="${text}">${text}</span>`;
+      }
+
+      col.appendChild(countWrap);
+      col.appendChild(track);
+      col.appendChild(footer);
+      grid.appendChild(col);
     });
-  });
+
+    wrapper.appendChild(grid);
+    bars.appendChild(wrapper);
+  }
 
   // Next button leads to the Scoreboard screen
   const btnScoreboard = document.getElementById('btnGoToScoreboard');

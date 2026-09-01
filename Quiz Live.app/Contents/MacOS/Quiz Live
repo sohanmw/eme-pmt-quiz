@@ -31,20 +31,14 @@ for i in {1..10}; do
   sleep 0.5
 done
 
-# 3. Detect active local port
-LOCAL_PORT="3000"
-if lsof -i :3001 > /dev/null 2>&1; then
-  LOCAL_PORT="3001"
-fi
-
-# 4. Open browser directly to admin dashboard
+# 3. Open browser directly to host dashboard
 if [ -n "$TUNNEL_URL" ]; then
-  open "$TUNNEL_URL/admin.html"
+  open "$TUNNEL_URL/host.html"
 else
-  open "http://localhost:${LOCAL_PORT}/admin.html"
+  open "http://localhost:3001/host.html"
 fi
 
-# 5. Native macOS notification
-osascript -e 'display notification "Quiz Live Admin Dashboard opened! Ready to host." with title "Quiz Live"' > /dev/null 2>&1 &
+# 4. Native notification
+osascript -e 'display notification "Host dashboard opened in browser! Ready for players." with title "Quiz Live"' > /dev/null 2>&1 &
 
 exit 0

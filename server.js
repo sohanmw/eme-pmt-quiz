@@ -15,69 +15,15 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
-const crypto = require('crypto');
-
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@quizlive.com').trim().toLowerCase();
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-
-// In-memory active session tokens: token -> { email, createdAt }
-const activeSessions = new Map();
-
-function requireAuth(req, res, next) {
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '') || req.query.token || req.headers['x-auth-token'];
-  if (!token || !activeSessions.has(token)) {
-    return res.status(401).json({ ok: false, error: 'Unauthorized. Please log in.' });
-  }
-  req.user = activeSessions.get(token);
-  next();
-}
-
-// ---------------------------------------------------------------------
-// Admin Authentication REST APIs
-// ---------------------------------------------------------------------
-app.post('/api/auth/login', (req, res) => {
-  try {
-    const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ ok: false, error: 'Email and password are required' });
-    }
-    if (email.trim().toLowerCase() !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
-      return res.status(401).json({ ok: false, error: 'Invalid email or password' });
-    }
-    const token = crypto.randomBytes(32).toString('hex');
-    activeSessions.set(token, { email: ADMIN_EMAIL, createdAt: Date.now() });
-    res.json({ ok: true, token, email: ADMIN_EMAIL });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
-
-app.get('/api/auth/me', (req, res) => {
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '') || req.query.token || req.headers['x-auth-token'];
-  if (!token || !activeSessions.has(token)) {
-    return res.status(401).json({ ok: false, error: 'Session expired' });
-  }
-  res.json({ ok: true, email: ADMIN_EMAIL });
-});
-
-app.post('/api/auth/logout', (req, res) => {
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '') || req.query.token || req.headers['x-auth-token'];
-  if (token) activeSessions.delete(token);
-  res.json({ ok: true });
-});
-
 const QUIZZES_DIR = path.join(__dirname, 'saved_quizzes');
 if (!fs.existsSync(QUIZZES_DIR)) {
   fs.mkdirSync(QUIZZES_DIR, { recursive: true });
 }
 
 // ---------------------------------------------------------------------
-// Laptop Hard Drive Quiz Storage REST API (Protected)
+// Laptop Hard Drive Quiz Storage REST API
 // ---------------------------------------------------------------------
-app.get('/api/quizzes', requireAuth, (req, res) => {
+app.get('/api/quizzes', (req, res) => {
   try {
     const files = fs.readdirSync(QUIZZES_DIR).filter((f) => f.endsWith('.json'));
     const list = files.map((file) => {
@@ -96,7 +42,7 @@ app.get('/api/quizzes', requireAuth, (req, res) => {
   }
 });
 
-app.post('/api/quizzes', requireAuth, (req, res) => {
+app.post('/api/quizzes', (req, res) => {
   try {
     const { id, title, questions } = req.body;
     if (!title || !Array.isArray(questions)) {
@@ -119,7 +65,7 @@ app.post('/api/quizzes', requireAuth, (req, res) => {
   }
 });
 
-app.delete('/api/quizzes/:id', requireAuth, (req, res) => {
+app.delete('/api/quizzes/:id', (req, res) => {
   try {
     const safeId = req.params.id.replace(/[^a-zA-Z0-9_-]/g, '_');
     const filePath = path.join(QUIZZES_DIR, `${safeId}.json`);
@@ -127,75 +73,6 @@ app.delete('/api/quizzes/:id', requireAuth, (req, res) => {
       fs.unlinkSync(filePath);
     }
     res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
-
-// ---------------------------------------------------------------------
-// Launch Game from Admin Dashboard REST API
-// ---------------------------------------------------------------------
-app.post('/api/games/launch', requireAuth, (req, res) => {
-  try {
-    const { quizId, quizData } = req.body || {};
-    let targetQuiz = quizData;
-    if (!targetQuiz && quizId) {
-      const filePath = path.join(QUIZZES_DIR, `${quizId.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`);
-      if (fs.existsSync(filePath)) {
-        targetQuiz = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      }
-    }
-
-    if (!targetQuiz || !targetQuiz.questions || !targetQuiz.questions.length) {
-      return res.status(400).json({ ok: false, error: 'Quiz not found or has no questions' });
-    }
-
-    let pin;
-    do {
-      pin = String(Math.floor(100000 + Math.random() * 900000));
-    } while (games[pin]);
-
-    const formattedQuestions = targetQuiz.questions.map((q) => {
-      const isTf = q.type === 'tf';
-      const opts = isTf
-        ? [{ text: 'True' }, { text: 'False' }]
-        : (q.options || []).map((o) => (typeof o === 'string' ? { text: o } : { text: o.text || '' }));
-
-      return {
-        type: isTf ? 'tf' : 'mcq',
-        text: (q.text || '').trim(),
-        image: q.image || null,
-        isDoublePoints: !!q.isDoublePoints,
-        options: opts,
-        correctIndex: Number(q.correctIndex) || 0,
-        limitMs: (q.seconds || 20) * 1000,
-      };
-    });
-
-    const hostToken = crypto.randomBytes(16).toString('hex');
-    games[pin] = {
-      pin,
-      hostId: null,
-      hostToken,
-      title: targetQuiz.title || 'Live Session',
-      questions: formattedQuestions,
-      currentIndex: -1,
-      state: 'lobby',
-      players: {},
-      responses: [],
-      timer: null,
-      totalLimitMs: 0,
-      remainingMs: 0,
-      timerPaused: false,
-      questionStartedAt: null,
-    };
-
-    res.json({
-      ok: true,
-      pin,
-      hostToken,
-      presenterUrl: `/presenter.html?pin=${pin}&token=${hostToken}`,
-    });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
@@ -342,7 +219,7 @@ function currentQuestionPayload(game) {
     text: q.text,
     image: q.image || null,
     isDoublePoints: !!q.isDoublePoints,
-    options: (q.options || []).map((o) => (typeof o === 'string' ? o : (o ? (o.text || '') : ''))),
+    options: q.options.map((o) => o.text),
     limitMs: game.remainingMs !== undefined ? game.remainingMs : q.limitMs,
     totalLimitMs: game.totalLimitMs || q.limitMs,
     timerPaused: !!game.timerPaused,
@@ -513,7 +390,6 @@ function endQuestion(pin) {
       p.streak = 0;
     }
   });
-  game.revealCounts = counts;
 
   const lb = leaderboardWithStandings(game);
   lb.forEach((p) => {
@@ -521,7 +397,6 @@ function endQuestion(pin) {
   });
 
   io.to(pin).emit('question:reveal', {
-    question: currentQuestionPayload(game),
     correctIndex: q.correctIndex,
     isDoublePoints: !!q.isDoublePoints,
     counts,
@@ -617,39 +492,6 @@ io.on('connection', (socket) => {
     ack && ack({ ok: true, pin, ips: getLocalIPs(), port: currentPort });
   });
 
-  socket.on('host:attach', ({ pin, token }, ack) => {
-    const game = games[pin];
-    if (!game) {
-      return ack && ack({ ok: false, error: 'Session not found or already closed.' });
-    }
-    if (game.hostToken && token && game.hostToken !== token) {
-      return ack && ack({ ok: false, error: 'Invalid presenter security token.' });
-    }
-    game.hostId = socket.id;
-    socket.join(pin);
-    socket.data.pin = pin;
-    socket.data.role = 'host';
-
-    ack && ack({
-      ok: true,
-      pin,
-      title: game.title,
-      state: game.state,
-      ips: getLocalIPs(),
-      port: currentPort,
-      players: publicPlayerList(game),
-      questionCount: game.questions.length,
-      currentQuestion: currentQuestionPayload(game),
-      revealData: game.state === 'reveal' ? {
-        question: currentQuestionPayload(game),
-        correctIndex: game.questions[game.currentIndex]?.correctIndex,
-        isDoublePoints: !!game.questions[game.currentIndex]?.isDoublePoints,
-        counts: game.revealCounts || new Array(game.questions[game.currentIndex]?.options.length || 4).fill(0),
-        leaderboard: leaderboardWithStandings(game),
-      } : null,
-    });
-  });
-
   socket.on('host:start', ({ pin }) => {
     const game = games[pin];
     if (!game || game.hostId !== socket.id) return;
@@ -694,7 +536,7 @@ io.on('connection', (socket) => {
       game.totalLimitMs += addMs;
       game.questionStartedAt = Date.now();
       clearGameTimer(game);
-      game.timer = setTimeout(() => endQuestion(pin), game.remainingMs + 300);
+      game.timer = setTimeout(() => timeUpQuestion(pin), game.remainingMs + 300);
     } else {
       game.remainingMs += addMs;
       game.totalLimitMs += addMs;
@@ -886,6 +728,18 @@ io.on('connection', (socket) => {
       if (game.players[playerId]) {
         game.players[playerId].connected = false;
         io.to(pin).emit('lobby:update', publicPlayerList(game));
+
+        if (game.state === 'question') {
+          const activePlayers = Object.values(game.players).filter((p) => p.connected !== false);
+          const answeredCount = Object.values(game.players).filter((p) => p.answeredThisRound && p.connected !== false).length;
+          io.to(pin).emit('question:progress', {
+            answered: answeredCount,
+            total: activePlayers.length,
+          });
+          if (answeredCount >= activePlayers.length && activePlayers.length > 0) {
+            timeUpQuestion(pin, true);
+          }
+        }
       }
     }
 
