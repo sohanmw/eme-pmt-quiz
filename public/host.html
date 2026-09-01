@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Host Presentation — Quiz Live</title>
+<script>
+  // Seamless redirect: host.html -> admin.html (or presenter.html if live pin is present)
+  const _params = new URLSearchParams(window.location.search);
+  if (!_params.get('pin')) {
+    window.location.replace('admin.html');
+  } else {
+    window.location.replace(`presenter.html${window.location.search}`);
+  }
+</script>
 <link rel="stylesheet" href="style.css">
 <style>
   #qrBox canvas, #qrBox img, #qrBox table { border-radius: 8px; }
