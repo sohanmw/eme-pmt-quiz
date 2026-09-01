@@ -191,12 +191,17 @@ function publicPlayerList(game) {
     score: p.score,
     streak: p.streak || 0,
     maxStreak: p.maxStreak || 0,
+    lastMsTaken: p.lastMsTaken || null,
+    totalResponseMs: p.totalResponseMs || 0,
     connected: p.connected !== false,
   }));
 }
 
 function leaderboard(game) {
-  return publicPlayerList(game).sort((a, b) => b.score - a.score);
+  return publicPlayerList(game).sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return (a.totalResponseMs || 0) - (b.totalResponseMs || 0); // Tie-breaker by faster overall reflexes
+  });
 }
 
 function currentQuestion(game) {
@@ -610,6 +615,8 @@ io.on('connection', (socket) => {
 
     player.answeredThisRound = true;
     player.lastAnswerIndex = answerIndex;
+    player.lastMsTaken = msTaken;
+    player.totalResponseMs = (player.totalResponseMs || 0) + msTaken;
     player.score += gained;
 
     // Track response for session analytics
@@ -627,6 +634,7 @@ io.on('connection', (socket) => {
       ok: true,
       correct,
       gained,
+      msTaken,
       streak: player.streak,
       streakBonus,
       isDoublePoints: !!q.isDoublePoints,

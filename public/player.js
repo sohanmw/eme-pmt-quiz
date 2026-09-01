@@ -394,9 +394,11 @@ function submitAnswer(index) {
   vibrate(25);
   showScreen('locked');
 
+  let myLastMs = null;
   socket.emit('player:answer', { pin: currentPin, answerIndex: index }, (res) => {
     if (res && res.ok) {
       if (res.streak !== undefined) myStreak = res.streak;
+      if (res.msTaken !== undefined) myLastMs = res.msTaken;
     }
   });
 }
@@ -429,9 +431,12 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, leaderboard }) => 
     vibrate(60);
     if (window.QuizAudio) window.QuizAudio.playWrong();
   } else if (gained > 0) {
+    const msTaken = me && me.lastMsTaken ? me.lastMsTaken : myLastMs;
+    const speedLabel = msTaken ? `⚡ Answered in ${(msTaken / 1000).toFixed(2)}s` : 'Speed bonus applied';
+
     headline.textContent = isDoublePoints ? '⚡ 2X Correct Response!' : 'Correct Response';
     headline.style.color = '#34D399';
-    detail.textContent = `+${gained} points earned for speed & accuracy${isDoublePoints ? ' (2x Multiplier Applied)' : ''}`;
+    detail.innerHTML = `<strong style="color:var(--text-primary);">+${gained} PTS</strong> &nbsp;·&nbsp; <span style="color:#38BDF8;">${speedLabel}</span>${isDoublePoints ? ' &nbsp;·&nbsp; <strong>(2x Multiplier)</strong>' : ''}`;
     scoreBadge.textContent = `Total: ${myScore} PTS`;
 
     vibrate([40, 50, 50]);
