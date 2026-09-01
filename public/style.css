@@ -95,6 +95,23 @@ select:focus-visible,
   outline-offset: 2px;
 }
 
+/* ---- Application Screens State Management ---- */
+.screen {
+  display: none !important;
+  width: 100%;
+}
+.screen.active {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1;
+}
+.screen.center.active {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 input[type="text"], input[type="number"], textarea, select {
   font-family: inherit;
   background: var(--bg-surface-elevated);
