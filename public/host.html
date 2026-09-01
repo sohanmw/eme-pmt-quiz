@@ -138,9 +138,11 @@
             <h3 style="font-size:20px; font-weight:800; margin:4px 0;" id="overviewActiveTitle">Digital Marketing & Growth Trivia</h3>
             <p class="muted" style="margin:0; font-size:13px;" id="overviewActiveSubtitle">0 questions loaded in memory · Ready to present</p>
           </div>
-          <div class="row" style="gap:10px; flex-wrap:wrap;">
+          <div class="row" style="gap:10px; flex-wrap:wrap; align-items:center;">
             <button class="btn secondary" id="btnOverviewOpenStudio">Edit in Studio</button>
-            <button class="btn primary" id="btnOverviewLaunch" style="padding:12px 24px; font-size:15px;">Launch Live Session ▶</button>
+            <button class="btn primary" id="btnOverviewLaunch" style="padding:12px 24px; font-size:15px; display:inline-flex; align-items:center; gap:8px;">
+              Launch Live Session <span id="iconLaunchLiveOv"></span>
+            </button>
           </div>
         </div>
       </div>
@@ -148,20 +150,27 @@
       <!-- Quick Actions Grid -->
       <div class="row between" style="margin-bottom:12px; align-items:center;">
         <h3 style="font-size:16px; font-weight:700; margin:0;">Quick Deck Launcher</h3>
-        <button class="btn secondary" id="btnOverviewViewAllQuizzes" style="font-size:12px; padding:4px 10px;">View All Quizzes →</button>
+        <button class="btn secondary" id="btnOverviewViewAllQuizzes" style="font-size:12px; padding:6px 12px; display:inline-flex; align-items:center; gap:6px;">
+          View All Quizzes <span id="iconArrowRightOv"></span>
+        </button>
       </div>
       <div class="quiz-grid" id="overviewRecentDecksGrid"></div>
     </div>
 
     <!-- ============ TAB 2: MY QUIZZES ============ -->
     <div class="admin-tab-pane" id="pane-quizzes">
-      <div class="row between" style="flex-wrap:wrap; gap:12px; margin-bottom:16px; align-items:center;">
-        <div style="position:relative; flex:1; max-width:360px;">
-          <input type="text" id="quizSearchInput" placeholder="Search quizzes by title..." style="padding-left:14px; font-size:13px;">
+      <div class="row between" style="flex-wrap:wrap; gap:12px; margin-bottom:18px; align-items:center;">
+        <div style="position:relative; flex:1; max-width:380px; display:flex; align-items:center;">
+          <span id="searchIconWrap" style="position:absolute; left:14px; color:var(--text-muted); display:inline-flex; align-items:center; pointer-events:none;"></span>
+          <input type="text" id="quizSearchInput" placeholder="Search quizzes by title..." style="width:100%; height:40px; padding:0 14px 0 38px; font-size:13px; border-radius:var(--radius-md); box-sizing:border-box;">
         </div>
-        <div class="row" style="gap:8px;">
-          <button class="btn secondary" id="btnQuizzesImportCsv">📥 Import Spreadsheet</button>
-          <button class="btn primary" id="btnQuizzesCreateNew">+ New Quiz</button>
+        <div class="row" style="gap:10px; align-items:center;">
+          <button type="button" class="btn secondary" id="btnQuizzesImportCsv" style="height:40px; padding:0 16px; font-size:13px; display:inline-flex; align-items:center; gap:8px;">
+            <span id="quizzesImportCsvIcon"></span> Import Spreadsheet
+          </button>
+          <button type="button" class="btn primary" id="btnQuizzesCreateNew" style="height:40px; padding:0 18px; font-size:13px; display:inline-flex; align-items:center; gap:8px;">
+            <span id="quizzesNewQuizIcon"></span> New Quiz
+          </button>
         </div>
       </div>
 
@@ -255,9 +264,9 @@
   <!-- ============ CSV / SPREADSHEET IMPORT MODAL ============ -->
   <div class="modal-overlay" id="modalCsvImport" style="display:none;">
     <div class="modal-card" style="max-width: 580px;">
-      <div class="row between" style="margin-bottom:12px;">
+      <div class="row between" style="margin-bottom:12px; align-items:center;">
         <h3 style="font-size:18px; font-weight:800; margin:0;">Import Spreadsheet (Excel / CSV)</h3>
-        <button class="btn-icon" id="btnCloseCsvModal" style="font-size:18px; width:28px; height:28px;">✕</button>
+        <button type="button" class="btn-icon" id="btnCloseCsvModal" style="width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;"></button>
       </div>
       <p class="muted" style="font-size:13px; margin:0 0 16px;">
         Upload a <code>.csv</code> / <code>.tsv</code> file or paste cells directly from Google Sheets / Excel.
@@ -368,8 +377,8 @@
     <div class="stage-question" id="revealQText" style="font-size:22px; margin: 12px 0 16px;"></div>
     <div id="revealBars"></div>
     <div style="flex:1;"></div>
-    <button class="btn block primary" id="btnGoToScoreboard" style="font-size:16px; padding:16px; margin-top:20px;">
-      View Scoreboard ➔
+    <button class="btn block primary" id="btnGoToScoreboard" style="font-size:16px; padding:16px; margin-top:20px; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+      <span id="btnScoreboardText">View Scoreboard</span> <span id="iconScoreboardArrow"></span>
     </button>
   </section>
 
@@ -386,8 +395,8 @@
 
     <ol class="leaderboard animated-scoreboard" id="revealLeaderboard"></ol>
     <div style="flex:1;"></div>
-    <button class="btn block" id="nextQuestion" style="font-size:16px; padding:16px; margin-top:20px;">
-      Next Question ➔
+    <button class="btn block" id="nextQuestion" style="font-size:16px; padding:16px; margin-top:20px; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+      <span id="nextQuestionText">Next Question</span> <span id="iconNextQuestionArrow"></span>
     </button>
   </section>
 

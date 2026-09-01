@@ -822,14 +822,14 @@ function createQuizDeckCard(deck) {
       </div>
     </div>
     <div class="row between" style="gap:8px; margin-top:8px;">
-      <button class="btn primary" style="flex:1; padding:8px 12px; font-size:13px;" data-launch-deck="${deck.id}">
-        Launch ▶
+      <button class="btn primary" style="flex:1; padding:8px 12px; font-size:13px; display:inline-flex; align-items:center; justify-content:center; gap:6px;" data-launch-deck="${deck.id}">
+        ${window.Icons ? window.Icons.play(13) : ''} Launch
       </button>
-      <button class="btn secondary" style="padding:8px 12px; font-size:12px;" data-edit-deck="${deck.id}">
-        Edit
+      <button class="btn secondary" style="padding:8px 12px; font-size:12px; display:inline-flex; align-items:center; gap:6px;" data-edit-deck="${deck.id}">
+        ${window.Icons ? window.Icons.edit(13) : ''} Edit
       </button>
-      <button class="btn danger" style="padding:8px 10px; font-size:12px;" data-delete-deck="${deck.id}">
-        ✕
+      <button class="btn danger" style="padding:8px 10px; font-size:12px; display:inline-flex; align-items:center; justify-content:center;" data-delete-deck="${deck.id}" title="Delete Quiz">
+        ${window.Icons ? window.Icons.trash(13) : ''}
       </button>
     </div>
   `;
@@ -915,6 +915,11 @@ function initAdminDashboard() {
     setIcon('kpiIconReady', window.Icons.play(22));
 
     setIcon('saveQuizIconStudio', window.Icons.disk(14));
+    setIcon('searchIconWrap', window.Icons.search(14));
+    setIcon('quizzesImportCsvIcon', window.Icons.upload(14));
+    setIcon('quizzesNewQuizIcon', window.Icons.plus(14));
+    setIcon('iconLaunchLiveOv', window.Icons.play(12));
+    setIcon('iconArrowRightOv', window.Icons.arrowRight(12));
   }
 
   // 2. Tab Navigation Listeners
@@ -1834,15 +1839,21 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
 
   // Next button: on last question, leads directly to Grand Podium; otherwise, to animated scoreboard
   const btnScoreboard = document.getElementById('btnGoToScoreboard');
+  const btnScoreboardText = document.getElementById('btnScoreboardText');
+  const iconScoreboardArrow = document.getElementById('iconScoreboardArrow');
   if (btnScoreboard) {
     const isLastQ = currentQuestionIndex + 1 >= totalQuestionsCount;
+    if (btnScoreboardText) {
+      btnScoreboardText.textContent = isLastQ ? 'Reveal Grand Podium' : 'View Scoreboard';
+    }
+    if (iconScoreboardArrow && window.Icons) {
+      iconScoreboardArrow.innerHTML = isLastQ ? window.Icons.crown(16) : window.Icons.arrowRight(14);
+    }
     if (isLastQ) {
-      btnScoreboard.textContent = 'Reveal Grand Podium ➔';
       btnScoreboard.onclick = () => {
         if (currentPin) socket.emit('host:next', { pin: currentPin });
       };
     } else {
-      btnScoreboard.textContent = 'View Scoreboard ➔';
       btnScoreboard.onclick = () => showAnimatedScoreboard(leaderboard);
     }
   }
@@ -1982,9 +1993,16 @@ function showAnimatedScoreboard(leaderboard) {
   }, 900);
 
   const nextBtn = document.getElementById('nextQuestion');
+  const nextText = document.getElementById('nextQuestionText');
+  const nextIcon = document.getElementById('iconNextQuestionArrow');
   if (nextBtn) {
     const isLastQ = currentQuestionIndex + 1 >= totalQuestionsCount;
-    nextBtn.textContent = isLastQ ? 'View Final Results ➔' : 'Next Question ➔';
+    if (nextText) {
+      nextText.textContent = isLastQ ? 'View Final Results' : 'Next Question';
+    }
+    if (nextIcon && window.Icons) {
+      nextIcon.innerHTML = isLastQ ? window.Icons.trophy(16) : window.Icons.arrowRight(14);
+    }
   }
 }
 
