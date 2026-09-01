@@ -1065,12 +1065,8 @@ socket.on('question:show', (q) => {
   
   const ansEl = document.getElementById('answeredCount');
   const totEl = document.getElementById('totalPlayers');
-  const barEl = document.getElementById('answersProgressFill');
-  const secEl = document.getElementById('hostTimerSeconds');
   if (ansEl) ansEl.textContent = '0';
   if (totEl) totEl.textContent = String(q.playerCount || 0);
-  if (barEl) barEl.style.width = '0%';
-  if (secEl) secEl.textContent = Math.ceil((q.limitMs || 20000) / 1000);
 
   // 2X Double Points Badge
   const badge2x = document.getElementById('host2xBadge');
@@ -1122,21 +1118,14 @@ socket.on('question:show', (q) => {
 socket.on('question:progress', ({ answered, total }) => {
   const ansEl = document.getElementById('answeredCount');
   const totEl = document.getElementById('totalPlayers');
-  const barEl = document.getElementById('answersProgressFill');
   if (ansEl) ansEl.textContent = answered;
   if (totEl) totEl.textContent = total;
-  if (barEl) {
-    const pct = total > 0 ? Math.min(100, Math.round((answered / total) * 100)) : 0;
-    barEl.style.width = `${pct}%`;
-  }
 });
 
 socket.on('question:timeUp', ({ allAnswered } = {}) => {
   if (hostTimerRaf) cancelAnimationFrame(hostTimerRaf);
   const fill = document.getElementById('timerFill');
   if (fill) fill.style.width = '0%';
-  const secEl = document.getElementById('hostTimerSeconds');
-  if (secEl) secEl.textContent = '0';
 
   const skipBtn = document.getElementById('skipQuestion');
   if (skipBtn) {

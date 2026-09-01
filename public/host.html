@@ -141,23 +141,13 @@
     
     <div class="stage-question" id="qText">Question text</div>
 
-    <!-- Real-time Live Answers & Countdown Tracker directly below question -->
-    <div class="question-live-tracker">
-      <div class="tracker-timer-box">
-        <div class="tracker-timer-num" id="hostTimerSeconds">20</div>
-        <div class="tracker-timer-label">SEC LEFT</div>
-      </div>
-
-      <div class="tracker-answers-box">
-        <div class="tracker-answers-headline">
-          <span class="tracker-num" id="answeredCount">0</span>
-          <span class="tracker-slash">/</span>
-          <span class="tracker-total" id="totalPlayers">0</span>
-          <span class="tracker-text">Players Answered</span>
-        </div>
-        <div class="tracker-bar-track">
-          <div class="tracker-bar-fill" id="answersProgressFill" style="width:0%;"></div>
-        </div>
+    <!-- Sleek Round Badge below question on right side -->
+    <div style="display:flex; justify-content:flex-end; margin: 4px 0 14px;">
+      <div class="answers-round-badge">
+        <span class="answers-count-num" id="answeredCount">0</span>
+        <span class="answers-count-slash">/</span>
+        <span class="answers-count-total" id="totalPlayers">0</span>
+        <span class="answers-count-text">Answered</span>
       </div>
     </div>
 
