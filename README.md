@@ -1,111 +1,64 @@
-# Quiz — a self-hosted Kahoot-style game
+# Quiz Live — Self-Hosted Real-Time Quiz Engine
 
-Live multiple-choice and true/false quizzes. One person hosts on a laptop or
-projector, other people join from their phones using a PIN or a QR code, and
-scores update in real time.
+A fast, beautiful, self-hosted Kahoot-style quiz game built with vanilla web technologies, Node.js, and WebSockets.
+Zero third-party cloud accounts, no subscriptions, and no database required.
 
-Everything here is open-source and runs on your own machine — there's no
-account to create, no paid API, and no database. All game state lives in
-memory while the server is running.
+---
 
-## What's in here
+## 🚀 Quick Launch (macOS Native App)
+
+Double-click **`Quiz Live.app`** on your Desktop or Applications folder:
+- Starts the local server and Cloudflare tunnel silently in the background.
+- Automatically opens the **Host Dashboard** in your default web browser.
+- Displays an on-screen **QR Code** and public HTTPS link for players to join from any smartphone over 4G/5G or any Wi-Fi worldwide.
+
+---
+
+## 🎯 Key Features
+
+- **Iconic Kahoot Shapes**: Red Triangle (▲), Blue Diamond (◆), Yellow Circle (●), Green Square (■).
+- **Cute Character Avatars (DPs)**: 12 zero-dependency offline SVG characters (Cyber Bot, Astro Cat, Chill Dino, Party Penguin, etc.).
+- **2x Double Points Multiplier**: High-voltage tiebreaker rounds with glowing multiplier badges and hype audio.
+- **Mobile Haptic Feedback**: Tactile vibration triggers (`navigator.vibrate`) on option tap, correct answers, and podium finishes.
+- **Mac Hard Drive Quiz Storage**: Saves quiz decks directly to your laptop as `.json` files (`saved_quizzes/`).
+- **Session Analytics Dashboard**: Accuracy %, Hardest Question, Speed Demon award, and 1-click **Download CSV** scorecard.
+- **Audio & Hype**: Procedural Web Audio ticking countdown, streak chimes, buzzers, and victory fanfare.
+- **Zero-Dependency Vector QR Code**: Automatically encodes your public link for instant mobile join.
+
+---
+
+## 📁 Project Structure
 
 ```
-server.js          the whole backend (Express + Socket.io, one process)
+Quiz Live.app/       # Native macOS application launcher with custom icon
+bin/
+  cloudflared        # Standalone Cloudflare tunnel binary for public HTTPS access
+saved_quizzes/       # Hard drive JSON storage for your saved quiz decks
 public/
-  index.html        landing page (host or join)
-  host.html/.js      quiz builder + the screen you present
-  player.html/.js    the screen each player uses on their phone
-  vendor/qrcode.js   QR code generator, vendored locally (no CDN call)
-  style.css          shared look and feel
+  audio.js           # Web Audio API sound effects and fanfare
+  avatars.js         # 12 cute SVG character avatar generators
+  confetti.js        # Canvas celebration confetti
+  host.html / .js    # Host presentation and quiz builder
+  icons.js           # Vector SVG icons & Kahoot shapes
+  index.html         # Landing screen
+  player.html / .js  # Mobile player interface & haptics
+  style.css          # Obsidian Dark theme and responsive layout
+  vendor/qrcode.js   # Offline vector QR code generator
+server.js            # Express + Socket.io backend and auto-tunnel manager
 ```
 
-## 1. Install (one-time)
+---
 
-You need [Node.js](https://nodejs.org) installed (any recent LTS version).
-Then, in this folder:
+## 💻 Manual CLI Launch (Optional)
+
+If running from terminal:
 
 ```bash
+# Install dependencies
 npm install
-```
 
-That downloads two small libraries — Express (serves the pages) and
-Socket.io (keeps host and players in sync in real time) — onto your own
-computer. Nothing is called over the network again after this step.
-
-## 2. Run it
-
-```bash
+# Start local server
 npm start
 ```
 
-You'll see something like:
-
-```
-Quiz server running.
-  On this computer: http://localhost:3000
-  On your network:  http://192.168.1.42:3000
-```
-
-- Open `http://localhost:3000/host.html` on the computer you're presenting
-  from (or just `http://localhost:3000` and click "Go to host screen").
-- Build your quiz (or import a saved `quiz.json`) and click **Create game**.
-  You'll get a 6-digit PIN and a QR code.
-- Everyone else opens the **network** address shown above on their own
-  phone (or scans the QR code, which encodes it automatically) and enters
-  the PIN plus a nickname.
-
-## Two ways people can "join online"
-
-**A. Same Wi-Fi / office network (simplest, truly zero third parties)**
-If everyone is on the same network as the host computer — same office
-Wi-Fi, same home network — they just open the `http://192.168.x.x:3000`
-address printed in the terminal, or scan the QR code. No internet access
-is needed at all, nothing leaves the building. This is the setup the app
-is configured for out of the box.
-
-**B. Players anywhere on the internet**
-If people need to join from outside your network (different locations,
-mobile data), the server needs a public address. The code doesn't change —
-only where you run it. You have two free options:
-1. **Deploy it yourself** on a free tier of a host like Render, Railway, or
-   Fly.io. You'd push these same files there and they run `npm start` for
-   you, exactly like on your laptop. These aren't quiz platforms — they're
-   general-purpose computers-for-rent, the same category of thing as
-   renting a server, and the free tiers don't require a credit card on the
-   ones listed. This is still *your* app; nobody else is involved in what
-   it does.
-2. **Run it on your own computer and open one port** on your router
-   (port-forward 3000), then share your public IP. More setup, but keeps
-   everything on hardware you own.
-
-If you only ever need option A, you can ignore this section entirely —
-just run `npm start` and share the network address.
-
-## How the game works
-
-- **Scoring**: correct answers earn 500–1000 points depending on how fast
-  you answer (faster = more points, like Kahoot). Wrong or missed answers
-  score 0.
-- **Question types**: multiple choice (4 options, shape + color coded) and
-  true/false.
-- **Flow**: host builds questions → creates game → players join the lobby →
-  host starts → each question is shown with a countdown → results and a
-  live leaderboard appear after everyone answers (or time runs out) → host
-  moves to the next question → final podium at the end.
-- **Import/export**: on the quiz-builder screen you can export your
-  questions to a `quiz.json` file and import it again later, so you don't
-  have to retype a quiz each time (there's no server-side storage).
-
-## Notes and easy extensions
-
-- Restarting the server clears all games — there's no database. If you
-  want quizzes and results to persist between runs, the natural next step
-  is swapping the in-memory `games` object in `server.js` for a small
-  embedded database like SQLite (still free, still no external service).
-- The 6-digit PIN is regenerated per game and only exists while that game
-  is running.
-- Nicknames must be unique within a single game (server enforces this).
-- Everything is plain HTML/CSS/JS on the front end — no build step, no
-  framework, so it's easy to reskin in `style.css` if you want your own
-  branding.
+Open [http://localhost:3001/host.html](http://localhost:3001/host.html) on your laptop.

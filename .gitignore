@@ -2,3 +2,5 @@ node_modules/
 bin/
 .DS_Store
 *.log
+tunnel.url
+server.log
