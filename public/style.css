@@ -511,6 +511,55 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
 }
 
 /* =====================================================================
+   LOBBY PARTICIPANT CHIPS
+   ===================================================================== */
+.participant-chip, .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px 6px 8px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  user-select: none;
+}
+.participant-chip:hover, .chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-muted);
+  box-shadow: var(--shadow-card);
+}
+.participant-chip .avatar-wrapper, .chip .avatar-wrapper {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.participant-chip .avatar-wrapper svg, .chip .avatar-wrapper svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.participant-chip .player-name-text, .chip span {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* =====================================================================
    QUIZ BUILDER / QUESTION EDITOR STYLING
    ===================================================================== */
 .builder-toolbar-card {

@@ -13,6 +13,12 @@ let currentPort = Number(process.env.PORT) || 3000;
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
+
+// Forward all admin / presenter endpoints directly to host.html
+app.get(['/admin', '/admin.html', '/presenter', '/presenter.html', '/host'], (req, res) => {
+  res.redirect('/host.html');
+});
+
 app.use(express.static('public'));
 
 const QUIZZES_DIR = path.join(__dirname, 'saved_quizzes');

@@ -31,14 +31,14 @@ for i in {1..10}; do
   sleep 0.5
 done
 
-# 3. Open browser directly to host dashboard
+# 3. Open browser directly to admin dashboard
 if [ -n "$TUNNEL_URL" ]; then
-  open "$TUNNEL_URL/host.html"
+  open "$TUNNEL_URL/admin.html"
 else
-  open "http://localhost:3001/host.html"
+  open "http://localhost:3001/admin.html"
 fi
 
 # 4. Native notification
-osascript -e 'display notification "Host dashboard opened in browser! Ready for players." with title "Quiz Live"' > /dev/null 2>&1 &
+osascript -e 'display notification "Admin dashboard opened in browser! Ready to host." with title "Quiz Live"' > /dev/null 2>&1 &
 
 exit 0
