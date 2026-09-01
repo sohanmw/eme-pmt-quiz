@@ -361,25 +361,53 @@ function handleShowQuestion(q) {
 
   const optDiv = document.getElementById('pOptions');
   optDiv.innerHTML = '';
-  const grid = document.createElement('div');
-  grid.className = q.type === 'tf' ? 'tf-grid' : 'opt-grid';
+  const isClassic = q.screenMode !== 'full';
 
-  q.options.forEach((text, i) => {
-    const el = document.createElement('button');
-    el.type = 'button';
-    if (q.type === 'tf') {
-      el.className = `opt ${i === 0 ? 'tf-true' : 'tf-false'}`;
-      const checkOrCross = i === 0 && window.Icons ? window.Icons.check(16) : (window.Icons ? window.Icons.cross(16) : (i === 0 ? '✓' : '✕'));
-      el.innerHTML = `<span class="opt-badge">${checkOrCross}</span><span>${text}</span>`;
-    } else {
-      el.className = `opt ${OPT_CLASSES[i]}`;
-      const shapeSvg = window.Icons ? window.Icons.shape(i, 18) : LETTERS[i];
-      el.innerHTML = `<span class="opt-badge">${shapeSvg}</span><span>${text}</span>`;
-    }
-    el.onclick = () => submitAnswer(i);
-    grid.appendChild(el);
-  });
-  optDiv.appendChild(grid);
+  if (isClassic) {
+    // Kahoot Classic Mode: High-contrast tactile shape quadrants (no option text on mobile)
+    const grid = document.createElement('div');
+    grid.className = q.type === 'tf' ? 'kahoot-classic-tf-grid' : 'kahoot-classic-grid';
+
+    q.options.forEach((text, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      if (q.type === 'tf') {
+        btn.className = `kahoot-classic-btn ${i === 0 ? 'tf-true' : 'tf-false'}`;
+        const shapeSvg = i === 0
+          ? (window.Icons ? window.Icons.diamond(48) : '◆')
+          : (window.Icons ? window.Icons.triangle(48) : '▲');
+        btn.innerHTML = `<span class="shape-icon-wrap">${shapeSvg}</span>`;
+      } else {
+        btn.className = `kahoot-classic-btn opt-${i}`;
+        const shapeSvg = window.Icons ? window.Icons.shape(i, 48) : LETTERS[i];
+        btn.innerHTML = `<span class="shape-icon-wrap">${shapeSvg}</span>`;
+      }
+      btn.onclick = () => submitAnswer(i);
+      grid.appendChild(btn);
+    });
+    optDiv.appendChild(grid);
+  } else {
+    // Full Mobile Mode: Standard buttons with shapes + text labels
+    const grid = document.createElement('div');
+    grid.className = q.type === 'tf' ? 'tf-grid' : 'opt-grid';
+
+    q.options.forEach((text, i) => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      if (q.type === 'tf') {
+        el.className = `opt ${i === 0 ? 'tf-true' : 'tf-false'}`;
+        const checkOrCross = i === 0 && window.Icons ? window.Icons.check(16) : (window.Icons ? window.Icons.cross(16) : (i === 0 ? '✓' : '✕'));
+        el.innerHTML = `<span class="opt-badge">${checkOrCross}</span><span>${text}</span>`;
+      } else {
+        el.className = `opt ${OPT_CLASSES[i]}`;
+        const shapeSvg = window.Icons ? window.Icons.shape(i, 18) : LETTERS[i];
+        el.innerHTML = `<span class="opt-badge">${shapeSvg}</span><span>${text}</span>`;
+      }
+      el.onclick = () => submitAnswer(i);
+      grid.appendChild(el);
+    });
+    optDiv.appendChild(grid);
+  }
 
   const lockedTitle = document.querySelector('#screen-locked h2');
   const lockedMsg = document.querySelector('#screen-locked p');

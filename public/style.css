@@ -1039,7 +1039,90 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
 }
 .opt.tf-true .opt-badge { background: #26890C !important; border: 1px solid #3FB91C !important; color: #FFFFFF !important; }
 .opt.tf-false .opt-badge { background: #E21B3C !important; border: 1px solid #FF4D6A !important; color: #FFFFFF !important; }
+.opt.tf-true:hover { border-color: #26890C; background: rgba(38, 137, 12, 0.08); }
+.opt.tf-false:hover { border-color: #E21B3C; background: rgba(226, 27, 60, 0.08); }
 
+/* =====================================================================
+   KAHOOT CLASSIC MOBILE PLAYER CONTROLLER
+   ===================================================================== */
+.kahoot-classic-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  flex: 1;
+  min-height: 320px;
+  margin: 12px 0;
+}
+
+.kahoot-classic-tf-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+  flex: 1;
+  min-height: 320px;
+  margin: 12px 0;
+}
+
+.kahoot-classic-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1), filter 0.15s ease;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.kahoot-classic-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.kahoot-classic-btn:active {
+  transform: scale(0.95);
+  filter: brightness(1.25);
+}
+
+.kahoot-classic-btn .shape-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.kahoot-classic-btn.opt-0 {
+  background: linear-gradient(135deg, #E21B3C, #C01431);
+  color: #FFFFFF;
+}
+.kahoot-classic-btn.opt-1 {
+  background: linear-gradient(135deg, #1368CE, #0E52A7);
+  color: #FFFFFF;
+}
+.kahoot-classic-btn.opt-2 {
+  background: linear-gradient(135deg, #D89E00, #B28200);
+  color: #FFFFFF;
+}
+.kahoot-classic-btn.opt-3 {
+  background: linear-gradient(135deg, #26890C, #1D6D09);
+  color: #FFFFFF;
+}
+.kahoot-classic-btn.tf-true {
+  background: linear-gradient(135deg, #1368CE, #0E52A7);
+  color: #FFFFFF;
+}
+.kahoot-classic-btn.tf-false {
+  background: linear-gradient(135deg, #E21B3C, #C01431);
+  color: #FFFFFF;
+}
 /* =====================================================================
    REALTIME ROUND BADGE (BELOW QUESTION RIGHT SIDE)
    ===================================================================== */

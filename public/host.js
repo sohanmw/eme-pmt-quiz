@@ -821,12 +821,15 @@ function createQuizDeckCard(deck) {
         <span>${dateStr}</span>
       </div>
     </div>
-    <div class="row between" style="gap:8px; margin-top:8px;">
-      <button class="btn primary" style="flex:1; padding:8px 12px; font-size:13px; display:inline-flex; align-items:center; justify-content:center; gap:6px;" data-launch-deck="${deck.id}">
+    <div class="row between" style="gap:6px; margin-top:8px; flex-wrap:wrap;">
+      <button class="btn primary" style="flex:2; min-width:85px; padding:8px 12px; font-size:13px; display:inline-flex; align-items:center; justify-content:center; gap:6px;" data-launch-deck="${deck.id}">
         ${window.Icons ? window.Icons.play(13) : ''} Launch
       </button>
-      <button class="btn secondary" style="padding:8px 12px; font-size:12px; display:inline-flex; align-items:center; gap:6px;" data-edit-deck="${deck.id}">
+      <button class="btn secondary" style="flex:1; min-width:65px; padding:8px 10px; font-size:12px; display:inline-flex; align-items:center; justify-content:center; gap:5px;" data-edit-deck="${deck.id}">
         ${window.Icons ? window.Icons.edit(13) : ''} Edit
+      </button>
+      <button class="btn secondary" style="flex:1; min-width:70px; padding:8px 10px; font-size:12px; display:inline-flex; align-items:center; justify-content:center; gap:5px;" data-clone-deck="${deck.id}" title="Duplicate Quiz">
+        ${window.Icons ? window.Icons.copy(13) : ''} Clone
       </button>
       <button class="btn danger" style="padding:8px 10px; font-size:12px; display:inline-flex; align-items:center; justify-content:center;" data-delete-deck="${deck.id}" title="Delete Quiz">
         ${window.Icons ? window.Icons.trash(13) : ''}
@@ -846,6 +849,19 @@ function createQuizDeckCard(deck) {
     btnEdit.onclick = () => {
       loadDeckIntoSession(deck, false);
       switchAdminTab('studio');
+    };
+  }
+
+  // 1-Click Clone / Duplicate
+  const btnClone = card.querySelector('[data-clone-deck]');
+  if (btnClone) {
+    btnClone.onclick = async () => {
+      const clonedTitle = `${deck.title} (Copy)`;
+      const clonedQuestions = (deck.questions || []).map((q) => ({ ...q }));
+      btnClone.disabled = true;
+      btnClone.textContent = 'Cloning…';
+      await saveDeckToDisk(clonedTitle, clonedQuestions);
+      await renderAdminDecks(document.getElementById('quizSearchInput')?.value || '');
     };
   }
 
@@ -1001,7 +1017,16 @@ function initAdminDashboard() {
     btnSaveBottom.onclick = () => handleStudioSave(btnSaveBottom);
   }
 
-  // 6. Settings Copy Tunnel
+  // 6. Settings Handlers
+  const screenModeSelect = document.getElementById('settingsPlayerScreenMode');
+  if (screenModeSelect) {
+    const savedMode = localStorage.getItem('quiz_player_screen_mode') || 'classic';
+    screenModeSelect.value = savedMode;
+    screenModeSelect.onchange = () => {
+      localStorage.setItem('quiz_player_screen_mode', screenModeSelect.value);
+    };
+  }
+
   const btnCopyTunnel = document.getElementById('btnCopySettingsTunnel');
   if (btnCopyTunnel) {
     btnCopyTunnel.onclick = () => {
@@ -1379,8 +1404,11 @@ document.getElementById('createGame').onclick = () => {
   const quizTitle = document.getElementById('quizTitle').value.trim() || 'Untitled Session';
   saveDeckToDisk(quizTitle, questions).then(() => renderAdminDecks()).catch(() => {});
 
+  const screenMode = document.getElementById('settingsPlayerScreenMode')?.value || localStorage.getItem('quiz_player_screen_mode') || 'classic';
+
   const payload = {
     title: quizTitle,
+    screenMode,
     questions: questions.map((q) => ({
       type: q.type,
       text: q.text.trim(),

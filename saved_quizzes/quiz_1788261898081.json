@@ -1,0 +1,23 @@
+{
+  "id": "quiz_1788261898081",
+  "title": "Product Strategy Trivia",
+  "questions": [
+    {
+      "type": "mcq",
+      "text": "What is OKR?",
+      "options": [
+        {
+          "text": "Objectives & Key Results"
+        },
+        {
+          "text": "Other"
+        }
+      ],
+      "correctIndex": 0,
+      "seconds": 20
+    }
+  ],
+  "questionCount": 1,
+  "updatedAt": 1788261898081,
+  "dateStr": "Sep 1, 2026"
+}

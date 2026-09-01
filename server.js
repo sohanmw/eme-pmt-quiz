@@ -265,6 +265,7 @@ function currentQuestionPayload(game) {
     image: q.image || null,
     isDoublePoints: !!q.isDoublePoints,
     options: q.options.map((o) => o.text),
+    screenMode: game.screenMode || 'classic',
     limitMs: game.remainingMs !== undefined ? game.remainingMs : q.limitMs,
     totalLimitMs: game.totalLimitMs || q.limitMs,
     timerPaused: !!game.timerPaused,
@@ -512,7 +513,7 @@ function endGame(pin) {
 // ---------------------------------------------------------------------
 io.on('connection', (socket) => {
   // ---- HOST ----
-  socket.on('host:create', ({ title, questions }, ack) => {
+  socket.on('host:create', ({ title, questions, screenMode }, ack) => {
     if (!Array.isArray(questions) || questions.length === 0) {
       return ack && ack({ ok: false, error: 'Add at least one question first.' });
     }
@@ -522,6 +523,7 @@ io.on('connection', (socket) => {
       hostId: socket.id,
       title: title || 'Untitled Session',
       questions,
+      screenMode: screenMode || 'classic',
       state: 'lobby',
       currentIndex: -1,
       players: {},
