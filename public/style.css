@@ -751,28 +751,28 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
 }
 
 .opt-badge {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   flex-shrink: 0;
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.opt.a .opt-badge { background: var(--opt-a-bg); border-color: var(--opt-a-border); color: var(--opt-a-badge); }
-.opt.b .opt-badge { background: var(--opt-b-bg); border-color: var(--opt-b-border); color: var(--opt-b-badge); }
-.opt.c .opt-badge { background: var(--opt-c-bg); border-color: var(--opt-c-border); color: var(--opt-c-badge); }
-.opt.d .opt-badge { background: var(--opt-d-bg); border-color: var(--opt-d-border); color: var(--opt-d-badge); }
+.opt.a .opt-badge, .opt.opt-a .opt-badge { background: #E21B3C !important; border: 1px solid #FF4D6A !important; color: #FFFFFF !important; }
+.opt.b .opt-badge, .opt.opt-b .opt-badge { background: #1368CE !important; border: 1px solid #3B8BEB !important; color: #FFFFFF !important; }
+.opt.c .opt-badge, .opt.opt-c .opt-badge { background: #D89E00 !important; border: 1px solid #FFC01E !important; color: #FFFFFF !important; }
+.opt.d .opt-badge, .opt.opt-d .opt-badge { background: #26890C !important; border: 1px solid #3FB91C !important; color: #FFFFFF !important; }
 
-.opt.a:hover { border-color: var(--opt-a-border); }
-.opt.b:hover { border-color: var(--opt-b-border); }
-.opt.c:hover { border-color: var(--opt-c-border); }
-.opt.d:hover { border-color: var(--opt-d-border); }
+.opt.a:hover { border-color: #E21B3C; background: rgba(226, 27, 60, 0.08); }
+.opt.b:hover { border-color: #1368CE; background: rgba(19, 104, 206, 0.08); }
+.opt.c:hover { border-color: #D89E00; background: rgba(216, 158, 0, 0.08); }
+.opt.d:hover { border-color: #26890C; background: rgba(38, 137, 12, 0.08); }
 
 .opt.correct {
   background: rgba(16, 185, 129, 0.12) !important;
@@ -790,8 +790,8 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
-.opt.tf-true .opt-badge { background: var(--true-bg); border-color: var(--true-border); color: #34D399; }
-.opt.tf-false .opt-badge { background: var(--false-bg); border-color: var(--false-border); color: #FB7185; }
+.opt.tf-true .opt-badge { background: #26890C !important; border: 1px solid #3FB91C !important; color: #FFFFFF !important; }
+.opt.tf-false .opt-badge { background: #E21B3C !important; border: 1px solid #FF4D6A !important; color: #FFFFFF !important; }
 
 /* =====================================================================
    REALTIME ROUND BADGE (BELOW QUESTION RIGHT SIDE)
@@ -914,13 +914,13 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   width: 100%;
   max-width: 110px;
   height: 180px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px 12px 0 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
+  align-items: center;
   position: relative;
 }
 
@@ -931,7 +931,7 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 2px 8px rgba(255,255,255,0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.3);
   position: relative;
 }
 
@@ -943,8 +943,12 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
 .kahoot-bar-fill.tf-false { background: linear-gradient(180deg, #FF3355 0%, #E21B3C 100%) !important; }
 
 .kahoot-bar-column.is-correct .kahoot-bar-track {
-  border-color: rgba(16, 185, 129, 0.8);
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.kahoot-bar-column.is-correct .kahoot-bar-fill {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), inset 0 2px 8px rgba(255, 255, 255, 0.4) !important;
 }
 
 .kahoot-bar-footer {
