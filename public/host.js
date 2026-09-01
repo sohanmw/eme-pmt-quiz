@@ -879,8 +879,11 @@ function updateLobbyDisplay() {
       urlsEl.innerHTML = `
         <div style="margin-bottom:8px;">
           <span class="live-badge" style="font-size:11px; padding:3px 8px; margin-bottom:6px;">PUBLIC INTERNET ACTIVE</span><br>
-          <span style="font-size:13px; color:var(--text-muted);">Direct Player Link:</span><br>
-          <strong style="color:#38BDF8; font-size:14px; word-break:break-all;">${joinUrl}</strong>
+          <span style="font-size:13px; color:var(--text-muted);">Direct Player Link:</span>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+            <strong style="color:#38BDF8; font-size:13px; word-break:break-all;">${joinUrl}</strong>
+            <button type="button" class="btn secondary" id="btnCopyLobbyUrl" style="padding:3px 10px; font-size:11px; height:24px; border-radius:var(--radius-full); flex-shrink:0;">Copy Link</button>
+          </div>
         </div>
         <span style="font-size:12px; color:var(--text-muted);">
           Scan QR code or open link from any phone worldwide.
@@ -888,11 +891,29 @@ function updateLobbyDisplay() {
       `;
     } else {
       urlsEl.innerHTML = `
-        Direct Link: <strong>${joinUrl}</strong><br>
+        Direct Link:
+        <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+          <strong style="color:#38BDF8; font-size:13px; word-break:break-all;">${joinUrl}</strong>
+          <button type="button" class="btn secondary" id="btnCopyLobbyUrl" style="padding:3px 10px; font-size:11px; height:24px; border-radius:var(--radius-full); flex-shrink:0;">Copy Link</button>
+        </div>
         <span style="font-size:12px; color:var(--text-muted); display:inline-block; margin-top:4px;">
           Local Wi-Fi Network · Cloudflare tunnel connecting…
         </span>
       `;
+    }
+
+    const copyBtn = document.getElementById('btnCopyLobbyUrl');
+    if (copyBtn) {
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(joinUrl).then(() => {
+          copyBtn.textContent = 'Copied!';
+          copyBtn.style.color = '#34D399';
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy Link';
+            copyBtn.style.color = '';
+          }, 2000);
+        });
+      };
     }
   }
 }

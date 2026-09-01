@@ -63,11 +63,6 @@
       <span class="live-badge" id="hostLiveBadge" style="display:none;">LIVE SESSION</span>
     </div>
     <div class="row" style="gap:10px;">
-      <div id="tunnelStatusBadge" class="pill" style="display:none; gap:8px; padding:4px 10px;">
-        <span style="width:7px; height:7px; background:#10B981; border-radius:50%; box-shadow:0 0 8px #10B981; flex-shrink:0;"></span>
-        <span id="tunnelUrlText" style="font-size:12px; font-weight:600; color:var(--text-primary); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Online</span>
-        <button type="button" class="btn secondary" id="btnCopyPublicLink" style="padding:2px 8px; font-size:11px; height:22px; border-radius:var(--radius-full);">Copy Link</button>
-      </div>
       <button class="btn-icon" id="btnSound" title="Toggle Sound"></button>
     </div>
   </header>
@@ -136,20 +131,9 @@
         <span class="pill active" id="qCounter">Question 1 / 1</span>
         <span class="multiplier-badge" id="host2xBadge" style="display:none;">2X DOUBLE POINTS</span>
       </div>
-      <span class="live-badge" style="font-size:11px; padding:4px 10px;">⚡ LIVE ROUND</span>
     </div>
     
     <div class="stage-question" id="qText">Question text</div>
-
-    <!-- Sleek Round Badge below question on right side -->
-    <div style="display:flex; justify-content:flex-end; margin: 4px 0 14px;">
-      <div class="answers-round-badge">
-        <span class="answers-count-num" id="answeredCount">0</span>
-        <span class="answers-count-slash">/</span>
-        <span class="answers-count-total" id="totalPlayers">0</span>
-        <span class="answers-count-text">Answered</span>
-      </div>
-    </div>
 
     <div id="qMediaWrap" class="question-media-wrap" style="display:none;">
       <img id="qImg" src="" alt="Question Image">
@@ -158,10 +142,19 @@
     <div class="timer-bar" id="hostTimerBar"><div id="timerFill"></div></div>
     <div id="qOptions"></div>
 
-    <div class="host-control-bar">
-      <button class="btn secondary" id="btnTimerToggle">Pause</button>
-      <button class="btn secondary" id="btnAddTime">+10s</button>
-      <button class="btn" id="skipQuestion">Reveal Results</button>
+    <!-- Bottom Controls with Answered Badge below answers -->
+    <div class="host-control-bar" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; flex-wrap:wrap; gap:12px;">
+      <div class="answers-round-badge">
+        <span class="answers-count-num" id="answeredCount">0</span>
+        <span class="answers-count-slash">/</span>
+        <span class="answers-count-total" id="totalPlayers">0</span>
+        <span class="answers-count-text">Answered</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn secondary" id="btnTimerToggle">Pause</button>
+        <button class="btn secondary" id="btnAddTime">+10s</button>
+        <button class="btn" id="skipQuestion">Reveal Results</button>
+      </div>
     </div>
   </section>
 
