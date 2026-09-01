@@ -2,8 +2,8 @@
 (function () {
   const socket = io();
   const params = new URLSearchParams(window.location.search);
-  const currentPin = params.get('pin');
-  const hostToken = params.get('token');
+  let currentPin = params.get('pin');
+  let hostToken = params.get('token');
 
   let currentLobbyPin = currentPin;
   let currentLobbyIps = [];
@@ -32,13 +32,13 @@
   }
 
   // ---------------------------------------------------------------------
-  // Audio Mute Toggle
+  // Audio Mute Toggle (Pure Vector Icons)
   // ---------------------------------------------------------------------
   const btnSound = document.getElementById('btnPresenterSound');
   function updateSoundIcon() {
     if (!btnSound) return;
     const muted = window.QuizAudio ? window.QuizAudio.isMuted() : false;
-    btnSound.innerHTML = window.Icons ? window.Icons.volume(!muted) : (muted ? '🔇' : '🔊');
+    btnSound.innerHTML = muted ? (window.Icons ? window.Icons.volumeMute(18) : '') : (window.Icons ? window.Icons.volumeOn(18) : '');
   }
   if (btnSound) {
     btnSound.onclick = () => {
@@ -51,7 +51,35 @@
   updateSoundIcon();
 
   // ---------------------------------------------------------------------
-  // Tunnel Detection
+  // Floating Live Reactions
+  // ---------------------------------------------------------------------
+  function spawnFloatingReaction(emoji) {
+    const container = document.getElementById('reactions-container');
+    if (!container) return;
+
+    const el = document.createElement('div');
+    el.className = 'floating-reaction';
+    el.textContent = emoji;
+
+    const leftPct = 15 + Math.random() * 70;
+    const rot = (Math.random() - 0.5) * 30;
+    el.style.left = `${leftPct}vw`;
+    el.style.setProperty('--rot', `${rot}deg`);
+
+    container.appendChild(el);
+    if (window.QuizAudio) window.QuizAudio.playPop();
+
+    setTimeout(() => {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 2700);
+  }
+
+  socket.on('reaction:spawn', ({ emoji }) => {
+    spawnFloatingReaction(emoji);
+  });
+
+  // ---------------------------------------------------------------------
+  // Tunnel Status Detection
   // ---------------------------------------------------------------------
   async function checkTunnelStatus() {
     try {
@@ -74,16 +102,26 @@
   // ---------------------------------------------------------------------
   socket.on('connect', () => {
     if (!currentPin) {
-      alert('Missing session PIN. Please launch from the Admin Dashboard.');
+      document.getElementById('lobbyPin').textContent = 'NO PIN';
+      document.getElementById('lobbyUrls').innerHTML = `
+        <span style="color:#FB7185; font-weight:600;">No live session attached.</span><br>
+        <span style="font-size:13px; color:var(--text-muted);">Please launch a quiz deck from the Admin Dashboard.</span>
+        <div style="margin-top:12px;"><a class="btn" href="admin.html">Go to Admin Dashboard</a></div>
+      `;
       return;
     }
 
     socket.emit('host:attach', { pin: currentPin, token: hostToken }, (res) => {
       if (!res.ok) {
-        alert(res.error || 'Failed to attach to live session.');
+        document.getElementById('lobbyPin').textContent = 'ERROR';
+        document.getElementById('lobbyUrls').innerHTML = `
+          <span style="color:#FB7185; font-weight:600;">${res.error || 'Session not found'}</span><br>
+          <div style="margin-top:12px;"><a class="btn" href="admin.html">Return to Admin Dashboard</a></div>
+        `;
         return;
       }
 
+      currentPin = res.pin;
       if (res.title) {
         document.getElementById('presenterStageTitle').textContent = res.title;
       }
@@ -201,7 +239,7 @@
     if (startBtn) {
       if (players.length > 0) {
         startBtn.disabled = false;
-        startBtn.textContent = `Start Quiz with ${players.length} Player${players.length === 1 ? '' : 's'} →`;
+        startBtn.textContent = `Start Quiz (${players.length} participant${players.length === 1 ? '' : 's'})`;
       } else {
         startBtn.disabled = true;
         startBtn.textContent = 'Waiting for participants to join…';
@@ -248,7 +286,7 @@
         if (countdownEl) countdownEl.textContent = String(remainingSecs);
         if (window.QuizAudio) window.QuizAudio.playTick(1 - (remainingSecs / 3));
       } else {
-        if (countdownEl) countdownEl.textContent = '⚡';
+        if (countdownEl) countdownEl.innerHTML = window.Icons ? window.Icons.zap(28) : '⚡';
         clearInterval(getReadyInterval);
       }
     }, 1000);
@@ -416,7 +454,7 @@
     if (fill) fill.style.width = '0%';
 
     if (skipBtn) {
-      skipBtn.textContent = allAnswered ? '📊 All Answered — Reveal Results' : '📊 Time Expired — Reveal Results';
+      skipBtn.textContent = allAnswered ? 'All Answered — Reveal Results' : 'Time Expired — Reveal Results';
       skipBtn.style.background = '#6366F1';
       skipBtn.style.color = '#fff';
       skipBtn.style.boxShadow = '0 0 20px rgba(99, 102, 241, 0.6)';
@@ -534,7 +572,7 @@
       row.id = `sb-row-${p.id}`;
 
       const avatarSvg = window.Avatars ? window.Avatars.getSvg(p.avatar, 28) : '';
-      const flameSvg = window.Icons ? window.Icons.flame(14) : '🔥';
+      const flameSvg = window.Icons ? window.Icons.flame(14) : '';
       const streakHtml = p.streak >= 2 ? `<span class="streak-flame-badge">${flameSvg} ${p.streak}</span>` : '';
 
       row.innerHTML = `
@@ -554,11 +592,11 @@
       `;
 
       listEl.appendChild(row);
-      rowElements.push({ p, row, newRank, prevRank, prevScore, targetScore: p.score, scoreDelta, rankDelta });
+      rowElements.push({ p, row, newRank, prevRank, prevScore, targetScore: p.score, scoreDelta, rankDelta, hasPrev: !!prevData });
     });
 
     setTimeout(() => {
-      rowElements.forEach(({ p, targetScore, prevScore, scoreDelta, rankDelta, newRank }) => {
+      rowElements.forEach(({ p, targetScore, prevScore, scoreDelta, rankDelta, newRank, hasPrev }) => {
         const scoreEl = document.getElementById(`sb-score-${p.id}`);
         const floatEl = document.getElementById(`sb-float-${p.id}`);
         const rankEl = document.getElementById(`sb-rank-${p.id}`);
@@ -572,7 +610,7 @@
 
         if (rankEl) rankEl.textContent = `#${newRank}`;
 
-        if (shiftEl && prevData) {
+        if (shiftEl && hasPrev) {
           if (rankDelta > 0) {
             shiftEl.className = 'rank-shift up';
             const arrowSvg = window.Icons ? window.Icons.arrowUp(12) : '▲';
@@ -593,7 +631,7 @@
     const btnNext = document.getElementById('btnScoreboardNext');
     if (btnNext) {
       const isLastQuestion = currentQuestionIndex >= totalQuestionsCount - 1;
-      btnNext.textContent = isLastQuestion ? 'View Final Results & Podium 🏆' : 'Next Question ➔';
+      btnNext.textContent = isLastQuestion ? 'View Final Results & Podium' : 'Next Question ➔';
       btnNext.onclick = () => {
         socket.emit('host:next', { pin: currentPin });
       };
@@ -706,7 +744,7 @@
       <div class="analytics-card">
         <span class="analytics-label">Longest Streak</span>
         <span class="analytics-val" style="font-size:18px; color:#FBBF24;">${escapeHtml(an.longestStreakPlayer || 'None')}</span>
-        <span class="analytics-sub">${an.longestStreakCount ? an.longestStreakCount + ' correct in a row 🔥' : 'Top run'}</span>
+        <span class="analytics-sub">${an.longestStreakCount ? an.longestStreakCount + ' in a row' : 'Top run'}</span>
       </div>
     `;
   }

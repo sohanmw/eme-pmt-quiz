@@ -1,0 +1,87 @@
+{
+  "id": "sample_growth_trivia",
+  "title": "Digital Marketing & Growth Trivia (Sample)",
+  "questions": [
+    {
+      "type": "mcq",
+      "text": "What does \"ROAS\" stand for in performance marketing?",
+      "options": [
+        {
+          "text": "Return on Ad Spend"
+        },
+        {
+          "text": "Rate of Acquisition Spend"
+        },
+        {
+          "text": "Revenue over Annual Sales"
+        },
+        {
+          "text": "Reach of Audience Size"
+        }
+      ],
+      "correctIndex": 0,
+      "seconds": 20,
+      "isDoublePoints": false
+    },
+    {
+      "type": "tf",
+      "text": "Google Analytics 4 uses an event-based data model rather than session-based.",
+      "options": [
+        {
+          "text": "True"
+        },
+        {
+          "text": "False"
+        }
+      ],
+      "correctIndex": 0,
+      "seconds": 15,
+      "isDoublePoints": false
+    },
+    {
+      "type": "mcq",
+      "text": "Which email metric is most directly impacted by Apple Mail Privacy Protection (MPP)?",
+      "options": [
+        {
+          "text": "Click-Through Rate (CTR)"
+        },
+        {
+          "text": "Open Rate"
+        },
+        {
+          "text": "Spam Complaint Rate"
+        },
+        {
+          "text": "Unsubscribe Rate"
+        }
+      ],
+      "correctIndex": 1,
+      "seconds": 20,
+      "isDoublePoints": true
+    },
+    {
+      "type": "mcq",
+      "text": "What is the primary objective of a Lookalike Audience in Meta Ads?",
+      "options": [
+        {
+          "text": "Retarget abandoned carts"
+        },
+        {
+          "text": "Find new prospects resembling existing customers"
+        },
+        {
+          "text": "Block competitor IP addresses"
+        },
+        {
+          "text": "Target only current email newsletter subscribers"
+        }
+      ],
+      "correctIndex": 1,
+      "seconds": 20,
+      "isDoublePoints": false
+    }
+  ],
+  "questionCount": 4,
+  "updatedAt": 1788254094256,
+  "dateStr": "Sep 1, 2026"
+}
