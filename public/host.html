@@ -199,9 +199,14 @@
         <span class="muted" id="totalQuestionsCount" style="font-size:13px; font-weight:600;"></span>
       </div>
 
-      <button class="btn block" id="createGame" style="font-size:16px; padding:16px;">
-        Launch Live Session
-      </button>
+      <div class="row" style="gap:12px; margin-top:8px; flex-wrap:wrap;">
+        <button type="button" class="btn secondary" id="btnSaveStudioBottom" style="flex:1; min-width:200px; padding:15px; font-size:15px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+          <span id="saveQuizIconBottom"></span> Save to My Quizzes
+        </button>
+        <button type="button" class="btn primary" id="createGame" style="flex:2; min-width:240px; padding:15px; font-size:15px; font-weight:700;">
+          Save & Launch Live Session ▶
+        </button>
+      </div>
       <p id="setupError" class="muted" style="color:var(--false-border); margin-top:10px; text-align:center; font-weight:600;"></p>
     </div>
 

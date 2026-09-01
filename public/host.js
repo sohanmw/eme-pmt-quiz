@@ -956,26 +956,44 @@ function initAdminDashboard() {
     searchInput.oninput = (e) => renderAdminDecks(e.target.value.trim());
   }
 
-  // 5. Studio Save Action
+  // 5. Studio Save Actions (Top and Bottom Save Buttons)
+  const handleStudioSave = async (btn) => {
+    if (questions.length === 0) {
+      alert('Please add at least one question before saving.');
+      return;
+    }
+    const title = document.getElementById('quizTitle').value.trim() || 'Untitled Session';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+    }
+
+    await saveDeckToDisk(title, questions);
+
+    if (btn) {
+      btn.disabled = false;
+      const diskSvg = window.Icons ? window.Icons.disk(14) : '';
+      if (btn.id === 'btnSaveStudioBottom') {
+        btn.innerHTML = `<span id="saveQuizIconBottom">${diskSvg}</span> Save to My Quizzes`;
+      } else {
+        btn.innerHTML = `<span id="saveQuizIconStudio">${diskSvg}</span> Save Quiz to Mac`;
+      }
+    }
+    await renderAdminDecks();
+    switchAdminTab('quizzes');
+  };
+
   const btnSaveStudio = document.getElementById('btnSaveCurrentToMac');
   if (btnSaveStudio) {
-    btnSaveStudio.onclick = async () => {
-      if (questions.length === 0) {
-        alert('Please add at least one question before saving.');
-        return;
-      }
-      const title = document.getElementById('quizTitle').value.trim() || 'Untitled Session';
-      btnSaveStudio.disabled = true;
-      btnSaveStudio.textContent = 'Saving…';
+    btnSaveStudio.onclick = () => handleStudioSave(btnSaveStudio);
+  }
 
-      await saveDeckToDisk(title, questions);
-
-      btnSaveStudio.disabled = false;
-      const diskSvg = window.Icons ? window.Icons.disk(14) : '';
-      btnSaveStudio.innerHTML = `<span id="saveQuizIconStudio">${diskSvg}</span> Save Quiz to Mac`;
-      await renderAdminDecks();
-      alert(`Quiz "${title}" successfully saved to your Mac.`);
-    };
+  const btnSaveBottom = document.getElementById('btnSaveStudioBottom');
+  if (btnSaveBottom) {
+    const diskSvg = window.Icons ? window.Icons.disk(15) : '';
+    const iconBottom = document.getElementById('saveQuizIconBottom');
+    if (iconBottom) iconBottom.innerHTML = diskSvg;
+    btnSaveBottom.onclick = () => handleStudioSave(btnSaveBottom);
   }
 
   // 6. Settings Copy Tunnel
@@ -1353,8 +1371,11 @@ document.getElementById('createGame').onclick = () => {
     return;
   }
 
+  const quizTitle = document.getElementById('quizTitle').value.trim() || 'Untitled Session';
+  saveDeckToDisk(quizTitle, questions).then(() => renderAdminDecks()).catch(() => {});
+
   const payload = {
-    title: document.getElementById('quizTitle').value.trim() || 'Untitled Session',
+    title: quizTitle,
     questions: questions.map((q) => ({
       type: q.type,
       text: q.text.trim(),
