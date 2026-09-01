@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Quiz Live — Native macOS App Launcher
+APP_DIR="/Users/sohan/anti/quizhost"
+cd "$APP_DIR" || exit 1
+
+# 1. Start Node server in background if not already listening
+if ! lsof -i :3001 > /dev/null 2>&1 && ! lsof -i :3000 > /dev/null 2>&1; then
+  nohup node server.js > server.log 2>&1 &
+  sleep 1.5
+fi
+
+# 2. Wait up to 5 seconds to capture the active public Cloudflare URL
+TUNNEL_URL=""
+for i in {1..10}; do
+  if [ -f tunnel.url ]; then
+    URL_CANDIDATE=$(cat tunnel.url | tr -d ' \n\r')
+    if [[ "$URL_CANDIDATE" == http* ]]; then
+      TUNNEL_URL="$URL_CANDIDATE"
+      break
+    fi
+  fi
+  if [ -f tunnel.log ]; then
+    DETECTED=$(grep -o "https://[a-zA-Z0-9-]*\.trycloudflare\.com" tunnel.log | tail -n 1)
+    if [ -n "$DETECTED" ]; then
+      TUNNEL_URL="$DETECTED"
+      echo "$TUNNEL_URL" > tunnel.url
+      break
+    fi
+  fi
+  sleep 0.5
+done
+
+# 3. Open browser directly to host dashboard
+if [ -n "$TUNNEL_URL" ]; then
+  open "$TUNNEL_URL/host.html"
+else
+  open "http://localhost:3001/host.html"
+fi
+
+# 4. Native notification
+osascript -e 'display notification "Host dashboard opened in browser! Ready for players." with title "Quiz Live"' > /dev/null 2>&1 &
+
+exit 0
