@@ -381,6 +381,11 @@ function handleShowQuestion(q) {
   });
   optDiv.appendChild(grid);
 
+  const lockedTitle = document.querySelector('#screen-locked h2');
+  const lockedMsg = document.querySelector('#screen-locked p');
+  if (lockedTitle) lockedTitle.textContent = 'Response Submitted';
+  if (lockedMsg) lockedMsg.textContent = 'Waiting for the host to reveal round results…';
+
   startPlayerTimer(q.limitMs, q.totalLimitMs);
 }
 
@@ -394,14 +399,21 @@ function submitAnswer(index) {
   vibrate(25);
   showScreen('locked');
 
-  let myLastMs = null;
-  socket.emit('player:answer', { pin: currentPin, answerIndex: index }, (res) => {
-    if (res && res.ok) {
-      if (res.streak !== undefined) myStreak = res.streak;
-      if (res.msTaken !== undefined) myLastMs = res.msTaken;
-    }
-  });
+  socket.emit('player:answer', { pin: currentPin, answerIndex: index });
 }
+
+socket.on('question:timeUp', () => {
+  if (pTimerRaf) cancelAnimationFrame(pTimerRaf);
+  const fill = document.getElementById('pTimerFill');
+  if (fill) fill.style.width = '0%';
+  if (!hasAnswered) {
+    showScreen('locked');
+    const lockedTitle = document.querySelector('#screen-locked h2');
+    const lockedMsg = document.querySelector('#screen-locked p');
+    if (lockedTitle) lockedTitle.textContent = "Time's Up!";
+    if (lockedMsg) lockedMsg.textContent = 'Waiting for the host to reveal round results…';
+  }
+});
 
 // ---------------------------------------------------------------------
 // Round Results & Feedback with Haptics

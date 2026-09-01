@@ -1090,12 +1090,36 @@ socket.on('question:show', (q) => {
   });
   optDiv.appendChild(grid);
 
+  const skipBtn = document.getElementById('skipQuestion');
+  if (skipBtn) {
+    skipBtn.textContent = 'Reveal Results';
+    skipBtn.style.background = '';
+    skipBtn.style.color = '';
+    skipBtn.style.boxShadow = '';
+    skipBtn.style.transform = '';
+  }
+
   startHostTimer(q.limitMs, q.totalLimitMs);
 });
 
 socket.on('question:progress', ({ answered, total }) => {
   document.getElementById('answeredCount').textContent = answered;
   document.getElementById('totalPlayers').textContent = total;
+});
+
+socket.on('question:timeUp', ({ allAnswered } = {}) => {
+  if (hostTimerRaf) cancelAnimationFrame(hostTimerRaf);
+  const fill = document.getElementById('timerFill');
+  if (fill) fill.style.width = '0%';
+
+  const skipBtn = document.getElementById('skipQuestion');
+  if (skipBtn) {
+    skipBtn.textContent = allAnswered ? '📊 All Answered — Reveal Results' : '📊 Time Expired — Reveal Results';
+    skipBtn.style.background = '#6366F1';
+    skipBtn.style.color = '#fff';
+    skipBtn.style.boxShadow = '0 0 20px rgba(99, 102, 241, 0.6)';
+    skipBtn.style.transform = 'scale(1.05)';
+  }
 });
 
 // ---------------------------------------------------------------------
@@ -1113,40 +1137,72 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
 
   const bars = document.getElementById('revealBars');
   bars.innerHTML = '';
-
   const totalVotes = counts.reduce((a, b) => a + b, 0);
 
   if (currentQuestionMeta) {
     const isTf = currentQuestionMeta.type === 'tf';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'kahoot-bars-wrapper';
+
     const grid = document.createElement('div');
-    grid.className = isTf ? 'tf-grid' : 'opt-grid';
+    grid.className = `kahoot-bars-grid ${isTf ? 'tf-mode' : ''}`;
+
+    const maxCount = Math.max(...counts, 1);
 
     currentQuestionMeta.options.forEach((text, i) => {
       const isCorrect = i === correctIndex;
       const count = counts[i] || 0;
-      const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+      const fillHeightPct = totalVotes > 0 ? Math.max(12, Math.round((count / maxCount) * 100)) : 12;
 
-      const el = document.createElement('div');
-      if (isTf) {
-        el.className = `opt ${i === 0 ? 'tf-true' : 'tf-false'} ${isCorrect ? 'correct' : 'dimmed'}`;
-        const checkOrCross = i === 0 && window.Icons ? window.Icons.check(16) : (window.Icons ? window.Icons.cross(16) : (i === 0 ? '✓' : '✕'));
-        el.innerHTML = `
-          <span class="opt-badge">${checkOrCross}</span>
-          <span style="flex:1;">${text}</span>
-          <span class="pill" style="font-weight:700;">${count} (${pct}%)</span>
+      const col = document.createElement('div');
+      col.className = `kahoot-bar-column ${isCorrect ? 'is-correct' : (count > 0 ? 'is-wrong' : '')}`;
+
+      const countWrap = document.createElement('div');
+      countWrap.className = 'kahoot-bar-count-wrap';
+      if (isCorrect) {
+        countWrap.innerHTML = `
+          <span class="kahoot-bar-check">✓</span>
+          <span class="kahoot-bar-count" style="color:#34D399;">${count}</span>
         `;
       } else {
-        el.className = `opt ${OPT_CLASSES[i]} ${isCorrect ? 'correct' : 'dimmed'}`;
-        const shapeSvg = window.Icons ? window.Icons.shape(i, 16) : LETTERS[i];
-        el.innerHTML = `
-          <span class="opt-badge">${shapeSvg}</span>
-          <span style="flex:1;">${text}</span>
-          <span class="pill" style="font-weight:700;">${count} (${pct}%)</span>
+        countWrap.innerHTML = `
+          <span class="kahoot-bar-count">${count}</span>
         `;
       }
-      grid.appendChild(el);
+
+      const track = document.createElement('div');
+      track.className = 'kahoot-bar-track';
+
+      const fill = document.createElement('div');
+      const optClass = isTf ? (i === 0 ? 'tf-true' : 'tf-false') : OPT_CLASSES[i];
+      fill.className = `kahoot-bar-fill ${optClass}`;
+      fill.style.height = '0%'; // Starts at 0 for smooth upward rise
+
+      track.appendChild(fill);
+
+      const footer = document.createElement('div');
+      footer.className = 'kahoot-bar-footer';
+      if (isTf) {
+        const checkOrCross = i === 0 && window.Icons ? window.Icons.check(14) : (window.Icons ? window.Icons.cross(14) : (i === 0 ? '✓' : '✕'));
+        footer.innerHTML = `<span class="shape-icon">${checkOrCross}</span> <span>${text}</span>`;
+      } else {
+        const shapeSvg = window.Icons ? window.Icons.shape(i, 14) : LETTERS[i];
+        footer.innerHTML = `<span class="shape-icon">${shapeSvg}</span> <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;" title="${text}">${text}</span>`;
+      }
+
+      col.appendChild(countWrap);
+      col.appendChild(track);
+      col.appendChild(footer);
+      grid.appendChild(col);
+
+      // Trigger animated rise
+      setTimeout(() => {
+        fill.style.height = `${fillHeightPct}%`;
+      }, 80 + i * 70);
     });
-    bars.appendChild(grid);
+
+    wrapper.appendChild(grid);
+    bars.appendChild(wrapper);
   }
 
   // Leaderboard Rendering with Cute Avatars

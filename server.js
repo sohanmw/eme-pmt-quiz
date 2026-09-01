@@ -342,9 +342,17 @@ function computeSessionAnalytics(game) {
   };
 }
 
-function endQuestion(pin) {
+function timeUpQuestion(pin, allAnswered = false) {
   const game = games[pin];
   if (!game || game.state !== 'question') return;
+  clearGameTimer(game);
+  game.state = 'time_up';
+  io.to(pin).emit('question:timeUp', { allAnswered });
+}
+
+function endQuestion(pin) {
+  const game = games[pin];
+  if (!game || (game.state !== 'question' && game.state !== 'time_up')) return;
   clearGameTimer(game);
   game.state = 'reveal';
   game.timerPaused = false;
@@ -387,7 +395,7 @@ function startQuestion(pin) {
   io.to(pin).emit('question:show', currentQuestionPayload(game));
 
   clearGameTimer(game);
-  game.timer = setTimeout(() => endQuestion(pin), game.remainingMs + 300);
+  game.timer = setTimeout(() => timeUpQuestion(pin), game.remainingMs + 300);
 }
 
 function endGame(pin) {
@@ -493,7 +501,7 @@ io.on('connection', (socket) => {
   socket.on('host:next', ({ pin }) => {
     const game = games[pin];
     if (!game || game.hostId !== socket.id) return;
-    if (game.state === 'question') {
+    if (game.state === 'question' || game.state === 'time_up') {
       endQuestion(pin);
       return;
     }
@@ -630,14 +638,10 @@ io.on('connection', (socket) => {
       pointsGained: gained,
     });
 
+    // Acknowledge answer submission without leaking correctness or score yet
     ack && ack({
       ok: true,
-      correct,
-      gained,
-      msTaken,
-      streak: player.streak,
-      streakBonus,
-      isDoublePoints: !!q.isDoublePoints,
+      locked: true,
     });
 
     const activePlayers = Object.values(game.players).filter((p) => p.connected !== false);
@@ -649,7 +653,7 @@ io.on('connection', (socket) => {
     });
 
     if (answeredCount >= activePlayers.length && activePlayers.length > 0) {
-      endQuestion(pin);
+      timeUpQuestion(pin, true);
     }
   });
 
