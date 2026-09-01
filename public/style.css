@@ -794,7 +794,110 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
 .opt.tf-false .opt-badge { background: var(--false-bg); border-color: var(--false-border); color: #FB7185; }
 
 /* =====================================================================
-   KAHOOT-STYLE VERTICAL BAR GRAPH REVEAL
+   REALTIME LIVE QUESTION TRACKER (BELOW QUESTION)
+   ===================================================================== */
+.question-live-tracker {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  margin: 14px 0 20px;
+}
+
+.tracker-timer-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+  box-shadow: var(--shadow-card);
+}
+
+.tracker-timer-num {
+  font-size: 32px;
+  font-weight: 900;
+  color: #38BDF8;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracker-timer-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+
+.tracker-answers-box {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: var(--shadow-card);
+}
+
+.tracker-answers-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.tracker-num {
+  font-size: 26px;
+  font-weight: 900;
+  color: #34D399;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracker-slash {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.tracker-total {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracker-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-left: 6px;
+}
+
+.tracker-bar-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.tracker-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10B981, #34D399);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease-out;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+/* =====================================================================
+   KAHOOT-STYLE VERTICAL BAR GRAPH REVEAL (SOLID VIBRANT PILLARS)
    ===================================================================== */
 .kahoot-bars-wrapper {
   background: var(--bg-surface);
@@ -809,7 +912,7 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  height: 250px;
+  height: 260px;
   align-items: flex-end;
 }
 .kahoot-bars-grid.tf-mode {
@@ -825,6 +928,7 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   height: 100%;
   justify-content: flex-end;
   position: relative;
+  transition: opacity 0.4s ease;
 }
 
 .kahoot-bar-count-wrap {
@@ -837,25 +941,26 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
 }
 
 .kahoot-bar-count {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 900;
+  color: #FFFFFF;
   font-variant-numeric: tabular-nums;
   margin-bottom: 4px;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
 }
 
 .kahoot-bar-check {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: #10B981;
-  color: #fff;
-  font-size: 14px;
+  color: #FFFFFF;
+  font-size: 15px;
   font-weight: 900;
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.7);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.8);
   animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   margin-bottom: 4px;
 }
@@ -867,12 +972,13 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
 .kahoot-bar-track {
   width: 100%;
   max-width: 110px;
-  flex: 1;
-  background: rgba(255, 255, 255, 0.04);
+  height: 180px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 12px 12px 0 0;
   display: flex;
-  align-items: flex-end;
-  border: 1px solid var(--border-subtle);
+  flex-direction: column;
+  justify-content: flex-end;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
   position: relative;
 }
@@ -880,24 +986,24 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
 .kahoot-bar-fill {
   width: 100%;
   border-radius: 10px 10px 0 0;
-  transition: height 0.9s cubic-bezier(0.34, 1.25, 0.64, 1);
+  transition: height 0.85s cubic-bezier(0.34, 1.25, 0.64, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 2px 6px rgba(255,255,255,0.25);
-  min-height: 20px;
+  box-shadow: inset 0 2px 8px rgba(255,255,255,0.3);
+  position: relative;
 }
 
-.kahoot-bar-fill.opt-a { background: linear-gradient(180deg, #F43F5E 0%, #BE123C 100%) !important; }
-.kahoot-bar-fill.opt-b { background: linear-gradient(180deg, #0EA5E9 0%, #0369A1 100%) !important; }
-.kahoot-bar-fill.opt-c { background: linear-gradient(180deg, #F59E0B 0%, #B45309 100%) !important; }
-.kahoot-bar-fill.opt-d { background: linear-gradient(180deg, #10B981 0%, #047857 100%) !important; }
-.kahoot-bar-fill.tf-true { background: linear-gradient(180deg, #10B981 0%, #047857 100%) !important; }
-.kahoot-bar-fill.tf-false { background: linear-gradient(180deg, #F43F5E 0%, #BE123C 100%) !important; }
+.kahoot-bar-fill.opt-a, .kahoot-bar-fill.a { background: linear-gradient(180deg, #FF3355 0%, #E21B3C 100%) !important; }
+.kahoot-bar-fill.opt-b, .kahoot-bar-fill.b { background: linear-gradient(180deg, #1368CE 0%, #084999 100%) !important; }
+.kahoot-bar-fill.opt-c, .kahoot-bar-fill.c { background: linear-gradient(180deg, #FFA602 0%, #D88200 100%) !important; }
+.kahoot-bar-fill.opt-d, .kahoot-bar-fill.d { background: linear-gradient(180deg, #26890C 0%, #175E05 100%) !important; }
+.kahoot-bar-fill.tf-true { background: linear-gradient(180deg, #26890C 0%, #175E05 100%) !important; }
+.kahoot-bar-fill.tf-false { background: linear-gradient(180deg, #FF3355 0%, #E21B3C 100%) !important; }
 
 .kahoot-bar-column.is-correct .kahoot-bar-track {
-  border-color: rgba(16, 185, 129, 0.7);
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+  border-color: rgba(16, 185, 129, 0.8);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
 }
 
 .kahoot-bar-footer {
@@ -907,28 +1013,36 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 12px 10px;
   border-radius: var(--radius-md);
   font-size: 13px;
-  font-weight: 700;
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-primary);
+  font-weight: 800;
+  color: #FFFFFF;
   text-align: center;
-  min-height: 42px;
+  min-height: 48px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
 }
+
+.kahoot-bar-footer.opt-a, .kahoot-bar-footer.a { background: #E21B3C; border: 1px solid #FF4D6A; }
+.kahoot-bar-footer.opt-b, .kahoot-bar-footer.b { background: #1368CE; border: 1px solid #3B8BEB; }
+.kahoot-bar-footer.opt-c, .kahoot-bar-footer.c { background: #D89E00; border: 1px solid #FFC01E; }
+.kahoot-bar-footer.opt-d, .kahoot-bar-footer.d { background: #26890C; border: 1px solid #3FB91C; }
+.kahoot-bar-footer.tf-true { background: #26890C; border: 1px solid #3FB91C; }
+.kahoot-bar-footer.tf-false { background: #E21B3C; border: 1px solid #FF4D6A; }
+
 .kahoot-bar-footer .shape-icon {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
 }
 .kahoot-bar-column.is-correct .kahoot-bar-footer {
-  border-color: #10B981;
-  background: rgba(16, 185, 129, 0.15);
-  color: #34D399;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.7);
+  border-color: #34D399;
+  transform: scale(1.03);
 }
 .kahoot-bar-column.is-wrong {
-  opacity: 0.6;
+  opacity: 0.38;
 }
 
 /* =====================================================================

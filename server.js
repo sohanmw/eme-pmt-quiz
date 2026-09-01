@@ -211,6 +211,7 @@ function currentQuestion(game) {
 function currentQuestionPayload(game) {
   const q = currentQuestion(game);
   if (!q) return null;
+  const activePlayers = Object.values(game.players).filter((p) => p.connected !== false);
   return {
     index: game.currentIndex,
     total: game.questions.length,
@@ -222,6 +223,7 @@ function currentQuestionPayload(game) {
     limitMs: game.remainingMs !== undefined ? game.remainingMs : q.limitMs,
     totalLimitMs: game.totalLimitMs || q.limitMs,
     timerPaused: !!game.timerPaused,
+    playerCount: activePlayers.length,
   };
 }
 
@@ -392,7 +394,9 @@ function startQuestion(pin) {
     p.lastAnswerIndex = null;
   });
 
+  const activePlayers = Object.values(game.players).filter((p) => p.connected !== false);
   io.to(pin).emit('question:show', currentQuestionPayload(game));
+  io.to(pin).emit('question:progress', { answered: 0, total: activePlayers.length });
 
   clearGameTimer(game);
   game.timer = setTimeout(() => timeUpQuestion(pin), game.remainingMs + 300);

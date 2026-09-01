@@ -1005,6 +1005,9 @@ function startHostTimer(durationMs, totalMs) {
     fill.style.width = `${pct}%`;
 
     const sec = Math.ceil(remaining / 1000);
+    const secEl = document.getElementById('hostTimerSeconds');
+    if (secEl) secEl.textContent = sec;
+
     if (sec !== lastTickSecond && sec >= 0) {
       lastTickSecond = sec;
       if (window.QuizAudio && sec <= 5 && sec > 0) {
@@ -1059,8 +1062,15 @@ socket.on('question:show', (q) => {
 
   document.getElementById('qCounter').textContent = `Question ${q.index + 1} / ${q.total}`;
   document.getElementById('qText').textContent = q.text;
-  document.getElementById('answeredCount').textContent = '0';
-  document.getElementById('totalPlayers').textContent = '0';
+  
+  const ansEl = document.getElementById('answeredCount');
+  const totEl = document.getElementById('totalPlayers');
+  const barEl = document.getElementById('answersProgressFill');
+  const secEl = document.getElementById('hostTimerSeconds');
+  if (ansEl) ansEl.textContent = '0';
+  if (totEl) totEl.textContent = String(q.playerCount || 0);
+  if (barEl) barEl.style.width = '0%';
+  if (secEl) secEl.textContent = Math.ceil((q.limitMs || 20000) / 1000);
 
   // 2X Double Points Badge
   const badge2x = document.getElementById('host2xBadge');
@@ -1110,14 +1120,23 @@ socket.on('question:show', (q) => {
 });
 
 socket.on('question:progress', ({ answered, total }) => {
-  document.getElementById('answeredCount').textContent = answered;
-  document.getElementById('totalPlayers').textContent = total;
+  const ansEl = document.getElementById('answeredCount');
+  const totEl = document.getElementById('totalPlayers');
+  const barEl = document.getElementById('answersProgressFill');
+  if (ansEl) ansEl.textContent = answered;
+  if (totEl) totEl.textContent = total;
+  if (barEl) {
+    const pct = total > 0 ? Math.min(100, Math.round((answered / total) * 100)) : 0;
+    barEl.style.width = `${pct}%`;
+  }
 });
 
 socket.on('question:timeUp', ({ allAnswered } = {}) => {
   if (hostTimerRaf) cancelAnimationFrame(hostTimerRaf);
   const fill = document.getElementById('timerFill');
   if (fill) fill.style.width = '0%';
+  const secEl = document.getElementById('hostTimerSeconds');
+  if (secEl) secEl.textContent = '0';
 
   const skipBtn = document.getElementById('skipQuestion');
   if (skipBtn) {
@@ -1159,11 +1178,11 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
     currentQuestionMeta.options.forEach((text, i) => {
       const isCorrect = i === correctIndex;
       const count = counts[i] || 0;
-      // Guaranteed solid height: 0 votes => 20px base, >0 votes => proportional height
-      const fillHeightPct = maxCount > 0 && count > 0 ? Math.max(25, Math.round((count / maxCount) * 92)) : 8;
+      // Solid height: if 0 votes => 0%, if >0 votes => proportional height
+      const fillHeightPct = maxCount > 0 && count > 0 ? Math.max(25, Math.round((count / maxCount) * 92)) : 0;
 
       const col = document.createElement('div');
-      col.className = `kahoot-bar-column ${isCorrect ? 'is-correct' : (count > 0 ? 'is-wrong' : '')}`;
+      col.className = `kahoot-bar-column ${isCorrect ? 'is-correct' : (count === 0 ? '' : 'is-wrong')}`;
 
       const countWrap = document.createElement('div');
       countWrap.className = 'kahoot-bar-count-wrap';
@@ -1189,13 +1208,13 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
       track.appendChild(fill);
 
       const footer = document.createElement('div');
-      footer.className = 'kahoot-bar-footer';
+      footer.className = `kahoot-bar-footer ${optClass}`;
       if (isTf) {
         const checkOrCross = i === 0 && window.Icons ? window.Icons.check(14) : (window.Icons ? window.Icons.cross(14) : (i === 0 ? '✓' : '✕'));
         footer.innerHTML = `<span class="shape-icon">${checkOrCross}</span> <span>${text}</span>`;
       } else {
-        const shapeSvg = window.Icons ? window.Icons.shape(i, 14) : LETTERS[i];
-        footer.innerHTML = `<span class="shape-icon">${shapeSvg}</span> <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;" title="${text}">${text}</span>`;
+        const shapeSvg = window.Icons ? window.Icons.shape(i, 16) : LETTERS[i];
+        footer.innerHTML = `<span class="shape-icon" style="font-size:16px;">${shapeSvg}</span> <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;" title="${text}">${text}</span>`;
       }
 
       col.appendChild(countWrap);

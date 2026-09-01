@@ -136,10 +136,30 @@
         <span class="pill active" id="qCounter">Question 1 / 1</span>
         <span class="multiplier-badge" id="host2xBadge" style="display:none;">2X DOUBLE POINTS</span>
       </div>
-      <span class="pill big-count"><span id="answeredCount">0</span> / <span id="totalPlayers">0</span> Responses</span>
+      <span class="live-badge" style="font-size:11px; padding:4px 10px;">⚡ LIVE ROUND</span>
     </div>
     
     <div class="stage-question" id="qText">Question text</div>
+
+    <!-- Real-time Live Answers & Countdown Tracker directly below question -->
+    <div class="question-live-tracker">
+      <div class="tracker-timer-box">
+        <div class="tracker-timer-num" id="hostTimerSeconds">20</div>
+        <div class="tracker-timer-label">SEC LEFT</div>
+      </div>
+
+      <div class="tracker-answers-box">
+        <div class="tracker-answers-headline">
+          <span class="tracker-num" id="answeredCount">0</span>
+          <span class="tracker-slash">/</span>
+          <span class="tracker-total" id="totalPlayers">0</span>
+          <span class="tracker-text">Players Answered</span>
+        </div>
+        <div class="tracker-bar-track">
+          <div class="tracker-bar-fill" id="answersProgressFill" style="width:0%;"></div>
+        </div>
+      </div>
+    </div>
 
     <div id="qMediaWrap" class="question-media-wrap" style="display:none;">
       <img id="qImg" src="" alt="Question Image">
