@@ -470,13 +470,19 @@
   // ---------------------------------------------------------------------
   // Step 1: Kahoot Vertical Bar Graph Snapshot
   // ---------------------------------------------------------------------
-  socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboard }) => {
+  socket.on('question:reveal', ({ question, correctIndex, isDoublePoints, counts, leaderboard }) => {
     if (hostTimerRaf) cancelAnimationFrame(hostTimerRaf);
+    if (question) {
+      currentQuestionMeta = question;
+      currentQuestionIndex = question.index;
+      totalQuestionsCount = question.total;
+    }
     showScreen('reveal');
 
     if (window.QuizAudio) window.QuizAudio.stopQuestionMusic();
 
-    document.getElementById('revealQText').textContent = currentQuestionMeta ? currentQuestionMeta.text : '';
+    const q = currentQuestionMeta;
+    document.getElementById('revealQText').textContent = q ? (q.text || '') : '';
     const badge2x = document.getElementById('reveal2xBadge');
     if (badge2x) {
       badge2x.style.display = isDoublePoints ? 'inline-flex' : 'none';
@@ -485,19 +491,26 @@
     const container = document.getElementById('revealBars');
     container.innerHTML = '';
 
-    const isTf = currentQuestionMeta && currentQuestionMeta.type === 'tf';
+    if (!q || !q.options || !q.options.length) {
+      console.warn('No question options available for reveal.');
+      return;
+    }
 
+    const isTf = q.type === 'tf';
     const wrapper = document.createElement('div');
     wrapper.className = 'kahoot-bars-wrapper';
 
     const grid = document.createElement('div');
     grid.className = `kahoot-bars-grid ${isTf ? 'tf-mode' : ''}`;
 
-    const maxCount = Math.max(...counts, 1);
+    const safeCounts = counts || [];
+    const maxCount = Math.max(...safeCounts, 1);
 
-    currentQuestionMeta.options.forEach((text, i) => {
+    const optionsList = q.options.map((o) => (typeof o === 'string' ? o : (o.text || '')));
+
+    optionsList.forEach((text, i) => {
       const isCorrect = i === correctIndex;
-      const count = counts[i] || 0;
+      const count = safeCounts[i] || 0;
       const fillHeightPct = maxCount > 0 && count > 0 ? Math.max(25, Math.round((count / maxCount) * 92)) : 0;
 
       const col = document.createElement('div');

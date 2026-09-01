@@ -520,6 +520,7 @@ function endQuestion(pin) {
   });
 
   io.to(pin).emit('question:reveal', {
+    question: currentQuestionPayload(game),
     correctIndex: q.correctIndex,
     isDoublePoints: !!q.isDoublePoints,
     counts,
