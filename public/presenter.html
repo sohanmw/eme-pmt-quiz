@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Quiz Live — Live Presenter Stage</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body {
+    background: radial-gradient(circle at 50% 20%, #0F172A 0%, #030712 100%);
+    min-height: 100vh;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- Minimalist Presenter Header -->
+  <header class="brand">
+    <div class="brand-left">
+      <span class="mark"></span>
+      <h1 id="presenterStageTitle" style="font-size:20px;">Quiz Live Stage</h1>
+      <span class="live-badge" style="font-size:11px; padding:3px 8px;">PRESENTER MODE</span>
+    </div>
+    <div class="row" style="gap:10px;">
+      <button class="btn-icon" id="btnPresenterSound" title="Toggle Sound"></button>
+    </div>
+  </header>
+
+  <!-- ============ LOBBY ============ -->
+  <section id="screen-lobby" class="screen active">
+    <div class="card row between" style="align-items:center; flex-wrap:wrap; gap:28px;">
+      <div>
+        <p class="muted" style="margin:0 0 6px; text-transform:uppercase; font-size:12px; letter-spacing:0.05em; font-weight:600;">Session Join PIN</p>
+        <div class="pin-display" id="lobbyPin">------</div>
+        <p class="muted" id="lobbyUrls" style="margin-top:12px; max-width:380px;"></p>
+      </div>
+      <div id="qrBox" style="background:#fff; padding:10px; border-radius:12px; min-width:144px; min-height:144px; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.4);"></div>
+    </div>
+
+    <div class="row between" style="margin: 28px 0 12px;">
+      <h3 style="margin:0; font-size:16px; font-weight:700;">Connected Participants (<span id="playerCount">0</span>)</h3>
+      <span class="muted" style="font-size:13px;">Click any participant chip to remove</span>
+    </div>
+    <div class="row wrap-gap" id="playerChips" style="min-height:48px;"></div>
+
+    <div style="flex:1;"></div>
+    <button class="btn block" id="startGame" style="font-size:16px; padding:16px; margin-top:24px;" disabled>
+      Waiting for participants to join…
+    </button>
+  </section>
+
+  <!-- ============ GET READY (3s Question Preview Countdown) ============ -->
+  <section id="screen-get-ready" class="screen">
+    <div class="row between">
+      <span class="pill active" id="getReadyCounter">Question 1 / 1</span>
+      <span class="multiplier-badge" id="getReady2xBadge" style="display:none;">2X DOUBLE POINTS</span>
+    </div>
+    <div class="get-ready-wrapper">
+      <div class="get-ready-circle">
+        <span id="getReadyCountdown">3</span>
+      </div>
+      <h2 class="get-ready-prompt" id="getReadyPrompt">Question prompt preview...</h2>
+      <p class="muted" style="margin-top:16px; font-size:14px;">Get ready to choose your answer on your device!</p>
+    </div>
+  </section>
+
+  <!-- ============ QUESTION (presenting) ============ -->
+  <section id="screen-question" class="screen">
+    <div class="row between">
+      <div class="row" style="gap:8px;">
+        <span class="pill active" id="qCounter">Question 1 / 1</span>
+        <span class="multiplier-badge" id="host2xBadge" style="display:none;">2X DOUBLE POINTS</span>
+      </div>
+    </div>
+    
+    <div class="stage-question" id="qText">Question text</div>
+
+    <div id="qMediaWrap" class="question-media-wrap" style="display:none;">
+      <img id="qImg" src="" alt="Question Image">
+    </div>
+
+    <div class="timer-bar" id="hostTimerBar"><div id="timerFill"></div></div>
+    <div id="qOptions"></div>
+
+    <!-- Bottom Controls with Answered Badge below answers -->
+    <div class="host-control-bar" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; flex-wrap:wrap; gap:12px;">
+      <div class="answers-round-badge">
+        <span class="answers-count-num" id="answeredCount">0</span>
+        <span class="answers-count-slash">/</span>
+        <span class="answers-count-total" id="totalPlayers">0</span>
+        <span class="answers-count-text">Answered</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn secondary" id="btnTimerToggle">Pause</button>
+        <button class="btn secondary" id="btnAddTime">+10s</button>
+        <button class="btn" id="skipQuestion">Reveal Results</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 1: BAR GRAPH SNAPSHOT ============ -->
+  <section id="screen-reveal" class="screen">
+    <div class="row between">
+      <span class="pill active">Answer Breakdown</span>
+      <span class="multiplier-badge" id="reveal2xBadge" style="display:none;">2X ROUND</span>
+    </div>
+    <div class="stage-question" id="revealQText" style="font-size:22px; margin: 12px 0 16px;"></div>
+    <div id="revealBars"></div>
+    <div style="flex:1;"></div>
+    <button class="btn block primary" id="btnGoToScoreboard" style="font-size:16px; padding:16px; margin-top:20px;">
+      View Scoreboard ➔
+    </button>
+  </section>
+
+  <!-- ============ SCREEN 2: ANIMATED TOP 10 SCOREBOARD ============ -->
+  <section id="screen-scoreboard" class="screen">
+    <div class="row between" style="margin-bottom:8px;">
+      <div>
+        <span class="live-badge" style="font-size:11px; padding:3px 8px;">ROUND STANDINGS</span>
+        <h2 style="font-size:26px; font-weight:800; margin:6px 0 0;">Top 10 Scoreboard</h2>
+      </div>
+    </div>
+    <p class="muted" style="margin:0 0 16px; font-size:14px;">Instant leaderboard movements after round results.</p>
+    
+    <div id="scoreboardList" class="animated-scoreboard"></div>
+    
+    <div style="flex:1;"></div>
+    <button class="btn block primary" id="btnScoreboardNext" style="font-size:16px; padding:16px; margin-top:24px;">
+      Next Question ➔
+    </button>
+  </section>
+
+  <!-- ============ SCREEN 3: FINAL PODIUM & ANALYTICS ============ -->
+  <section id="screen-final" class="screen">
+    <div class="row between" style="align-items:center; margin-bottom: 20px;">
+      <div>
+        <span class="live-badge" style="background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.3); color:#FBBF24;">SESSION COMPLETE</span>
+        <h2 style="margin: 8px 0 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em;">Champions Podium</h2>
+      </div>
+      <button class="btn secondary" id="btnDownloadCsv" style="font-size:13px; padding: 10px 16px;">
+        Download Analytics (CSV)
+      </button>
+    </div>
+
+    <!-- Podium Container -->
+    <div id="podiumArea"></div>
+
+    <h3 style="margin: 32px 0 12px; font-size: 16px; font-weight: 700; color: var(--text-secondary);">
+      Final Standings (Top 10)
+    </h3>
+    <div id="finalLeaderboard"></div>
+
+    <!-- Post-Session Analytics Insights -->
+    <h3 style="margin: 36px 0 12px; font-size: 16px; font-weight: 700; color: var(--text-secondary);">
+      Session Analytics & Performance Insights
+    </h3>
+    <div class="analytics-grid" id="analyticsGrid"></div>
+
+    <div class="card" style="margin-top: 24px; padding: 24px; text-align: center;">
+      <p class="muted" style="margin: 0 0 16px;">Thank you for participating!</p>
+      <button class="btn secondary" onclick="window.close()">Close Presenter Window</button>
+    </div>
+  </section>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="vendor/qrcode.min.js"></script>
+<script src="audio.js"></script>
+<script src="avatars.js"></script>
+<script src="icons.js"></script>
+<script src="confetti.js"></script>
+<script src="presenter.js"></script>
+</body>
+</html>
