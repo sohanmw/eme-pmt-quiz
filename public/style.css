@@ -20,21 +20,21 @@
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
 
-  --opt-a-bg: rgba(14, 165, 233, 0.08);
-  --opt-a-border: rgba(14, 165, 233, 0.35);
-  --opt-a-badge: #38BDF8;
+  --opt-a-bg: rgba(244, 63, 94, 0.08); /* Red Triangle */
+  --opt-a-border: rgba(244, 63, 94, 0.35);
+  --opt-a-badge: #FB7185;
 
-  --opt-b-bg: rgba(16, 185, 129, 0.08);
-  --opt-b-border: rgba(16, 185, 129, 0.35);
-  --opt-b-badge: #34D399;
+  --opt-b-bg: rgba(14, 165, 233, 0.08); /* Blue Diamond */
+  --opt-b-border: rgba(14, 165, 233, 0.35);
+  --opt-b-badge: #38BDF8;
 
-  --opt-c-bg: rgba(245, 158, 11, 0.08);
+  --opt-c-bg: rgba(245, 158, 11, 0.08); /* Yellow Circle */
   --opt-c-border: rgba(245, 158, 11, 0.35);
   --opt-c-badge: #FBBF24;
 
-  --opt-d-bg: rgba(244, 63, 94, 0.08);
-  --opt-d-border: rgba(244, 63, 94, 0.35);
-  --opt-d-badge: #FB7185;
+  --opt-d-bg: rgba(16, 185, 129, 0.08); /* Green Square */
+  --opt-d-border: rgba(16, 185, 129, 0.35);
+  --opt-d-badge: #34D399;
 
   --true-bg: rgba(16, 185, 129, 0.1);
   --true-border: #10B981;

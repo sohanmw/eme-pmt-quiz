@@ -5,12 +5,154 @@
 const express = require('express');
 const http = require('http');
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
 const { Server } = require('socket.io');
 
 let currentPort = Number(process.env.PORT) || 3000;
 
 const app = express();
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
+
+const QUIZZES_DIR = path.join(__dirname, 'saved_quizzes');
+if (!fs.existsSync(QUIZZES_DIR)) {
+  fs.mkdirSync(QUIZZES_DIR, { recursive: true });
+}
+
+// ---------------------------------------------------------------------
+// Laptop Hard Drive Quiz Storage REST API
+// ---------------------------------------------------------------------
+app.get('/api/quizzes', (req, res) => {
+  try {
+    const files = fs.readdirSync(QUIZZES_DIR).filter((f) => f.endsWith('.json'));
+    const list = files.map((file) => {
+      try {
+        const content = fs.readFileSync(path.join(QUIZZES_DIR, file), 'utf8');
+        return JSON.parse(content);
+      } catch (e) {
+        return null;
+      }
+    }).filter(Boolean);
+    // Sort newest first
+    list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    res.json({ ok: true, quizzes: list });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/quizzes', (req, res) => {
+  try {
+    const { id, title, questions } = req.body;
+    if (!title || !Array.isArray(questions)) {
+      return res.status(400).json({ ok: false, error: 'Invalid quiz payload' });
+    }
+    const safeId = (id || `quiz_${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const quizData = {
+      id: safeId,
+      title: title.trim(),
+      questions,
+      questionCount: questions.length,
+      updatedAt: Date.now(),
+      dateStr: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    };
+    const filePath = path.join(QUIZZES_DIR, `${safeId}.json`);
+    fs.writeFileSync(filePath, JSON.stringify(quizData, null, 2), 'utf8');
+    res.json({ ok: true, quiz: quizData });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.delete('/api/quizzes/:id', (req, res) => {
+  try {
+    const safeId = req.params.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filePath = path.join(QUIZZES_DIR, `${safeId}.json`);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Tunnel URL status detection
+let activeTunnelUrl = null;
+let cloudflareProcess = null;
+
+function startCloudflareTunnel(port) {
+  const binaryPath = path.join(__dirname, 'bin', 'cloudflared');
+  if (!fs.existsSync(binaryPath)) return;
+  if (cloudflareProcess) return;
+
+  console.log('Automatically launching Cloudflare Tunnel in background...');
+  const logFile = path.join(__dirname, 'tunnel.log');
+  const urlFile = path.join(__dirname, 'tunnel.url');
+
+  try {
+    const out = fs.openSync(logFile, 'w');
+    cloudflareProcess = require('child_process').spawn(
+      binaryPath,
+      ['tunnel', '--url', `http://localhost:${port}`],
+      { detached: false, stdio: ['ignore', out, out] }
+    );
+
+    cloudflareProcess.on('exit', (code) => {
+      console.log(`Cloudflare tunnel process exited with code ${code}`);
+      cloudflareProcess = null;
+      activeTunnelUrl = null;
+    });
+
+    let attempts = 0;
+    const poll = setInterval(() => {
+      attempts++;
+      if (fs.existsSync(logFile)) {
+        const content = fs.readFileSync(logFile, 'utf8');
+        const match = content.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+        if (match) {
+          activeTunnelUrl = match[0];
+          fs.writeFileSync(urlFile, activeTunnelUrl, 'utf8');
+          console.log(`\n🎉 Live Public Cloudflare Tunnel: ${activeTunnelUrl}\n`);
+          clearInterval(poll);
+        }
+      }
+      if (attempts > 25) clearInterval(poll);
+    }, 1000);
+  } catch (err) {
+    console.error('Failed to spawn Cloudflare tunnel:', err);
+  }
+}
+
+app.get('/api/tunnel-status', (req, res) => {
+  try {
+    if (activeTunnelUrl) {
+      return res.json({ ok: true, active: true, url: activeTunnelUrl });
+    }
+    const urlFile = path.join(__dirname, 'tunnel.url');
+    if (fs.existsSync(urlFile)) {
+      const url = fs.readFileSync(urlFile, 'utf8').trim();
+      if (url.startsWith('http')) {
+        activeTunnelUrl = url;
+        return res.json({ ok: true, active: true, url });
+      }
+    }
+    const logFile = path.join(__dirname, 'tunnel.log');
+    if (fs.existsSync(logFile)) {
+      const logContent = fs.readFileSync(logFile, 'utf8');
+      const match = logContent.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+      if (match) {
+        activeTunnelUrl = match[0];
+        fs.writeFileSync(urlFile, activeTunnelUrl, 'utf8');
+        return res.json({ ok: true, active: true, url: activeTunnelUrl });
+      }
+    }
+    res.json({ ok: true, active: false, url: null });
+  } catch (e) {
+    res.json({ ok: true, active: false, url: null });
+  }
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -543,6 +685,7 @@ function startServer(port) {
     console.log(`  On this computer: http://localhost:${currentPort}`);
     ips.forEach((ip) => console.log(`  On your network:  http://${ip}:${currentPort}`));
     console.log(`\nOpen /host.html on the host computer and /player.html on player devices.\n`);
+    startCloudflareTunnel(currentPort);
   };
 
   const onError = (err) => {

@@ -33,7 +33,18 @@
     book: (s = 16) => svg('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>', s),
     chart: (s = 16) => svg('<line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>', s),
     download: (s = 16) => svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>', s),
-    star: (s = 16) => svg('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor"></polygon>', s)
+    star: (s = 16) => svg('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor"></polygon>', s),
+
+    // Kahoot-style geometric vector shapes
+    triangle: (s = 16) => svg('<polygon points="12 3 22 19 2 19" fill="currentColor"></polygon>', s),
+    diamond: (s = 16) => svg('<polygon points="12 2 22 12 12 22 2 12" fill="currentColor"></polygon>', s),
+    circle: (s = 16) => svg('<circle cx="12" cy="12" r="9" fill="currentColor"></circle>', s),
+    square: (s = 16) => svg('<rect x="3.5" y="3.5" width="17" height="17" rx="2.5" fill="currentColor"></rect>', s),
+
+    shape: (index, s = 16) => {
+      const shapes = [Icons.triangle, Icons.diamond, Icons.circle, Icons.square];
+      return (shapes[index % 4] || shapes[0])(s);
+    }
   };
 
   window.Icons = Icons;

@@ -373,7 +373,8 @@ function handleShowQuestion(q) {
       el.innerHTML = `<span class="opt-badge">${checkOrCross}</span><span>${text}</span>`;
     } else {
       el.className = `opt ${OPT_CLASSES[i]}`;
-      el.innerHTML = `<span class="opt-badge">${LETTERS[i]}</span><span>${text}</span>`;
+      const shapeSvg = window.Icons ? window.Icons.shape(i, 18) : LETTERS[i];
+      el.innerHTML = `<span class="opt-badge">${shapeSvg}</span><span>${text}</span>`;
     }
     el.onclick = () => submitAnswer(i);
     grid.appendChild(el);

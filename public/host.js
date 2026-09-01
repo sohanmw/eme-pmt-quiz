@@ -346,7 +346,7 @@ function renderQuestionList() {
       if (q.type === 'tf') {
         badge.innerHTML = oi === 0 && window.Icons ? window.Icons.check(14) : (window.Icons ? window.Icons.cross(14) : (oi === 0 ? '✓' : '✕'));
       } else {
-        badge.textContent = LETTERS[oi];
+        badge.innerHTML = window.Icons ? window.Icons.shape(oi, 14) : LETTERS[oi];
       }
       optItem.appendChild(badge);
 
@@ -563,12 +563,20 @@ document.getElementById('btnSampleTrivia').onclick = () => {
 };
 
 // ---------------------------------------------------------------------
-// Saved Quiz Library System (localStorage)
+// Saved Quiz Library System (Laptop Hard Drive Disk Storage via /api/quizzes)
 // ---------------------------------------------------------------------
 const libraryModal = document.getElementById('modalLibrary');
 const libraryContainer = document.getElementById('libraryListContainer');
 
-function getLibraryDecks() {
+async function fetchLibraryDecks() {
+  try {
+    const res = await fetch('/api/quizzes');
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.quizzes)) {
+      return data.quizzes;
+    }
+  } catch (e) {}
+  // Fallback to localStorage if offline
   try {
     const raw = localStorage.getItem('quiz_library_decks');
     return raw ? JSON.parse(raw) : [];
@@ -577,22 +585,66 @@ function getLibraryDecks() {
   }
 }
 
-function saveLibraryDecks(decks) {
+async function saveDeckToDisk(title, deckQuestions) {
+  const payload = {
+    title,
+    questions: deckQuestions.map((q) => ({
+      type: q.type,
+      text: q.text,
+      image: q.image,
+      isDoublePoints: !!q.isDoublePoints,
+      options: q.options,
+      correctIndex: q.correctIndex,
+      seconds: q.seconds,
+    })),
+  };
   try {
+    const res = await fetch('/api/quizzes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.ok) return data.quiz;
+  } catch (e) {}
+
+  // Fallback save to localStorage
+  try {
+    const decks = JSON.parse(localStorage.getItem('quiz_library_decks') || '[]');
+    const newDeck = {
+      id: `deck_${Date.now()}`,
+      title,
+      dateStr: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      questions: payload.questions,
+    };
+    decks.unshift(newDeck);
     localStorage.setItem('quiz_library_decks', JSON.stringify(decks));
+    return newDeck;
   } catch (e) {}
 }
 
-function renderLibraryList() {
+async function deleteDeckFromDisk(id) {
+  try {
+    await fetch(`/api/quizzes/${id}`, { method: 'DELETE' });
+  } catch (e) {}
+  try {
+    const decks = JSON.parse(localStorage.getItem('quiz_library_decks') || '[]');
+    const remaining = decks.filter((d) => d.id !== id);
+    localStorage.setItem('quiz_library_decks', JSON.stringify(remaining));
+  } catch (e) {}
+}
+
+async function renderLibraryList() {
   if (!libraryContainer) return;
-  const decks = getLibraryDecks();
+  libraryContainer.innerHTML = '<p class="muted" style="text-align:center; padding:16px;">Loading saved quizzes from your Mac…</p>';
+  const decks = await fetchLibraryDecks();
   libraryContainer.innerHTML = '';
 
   if (decks.length === 0) {
     libraryContainer.innerHTML = `
       <div style="text-align:center; padding:32px 16px; border:1px dashed var(--border-subtle); border-radius:var(--radius-md);">
-        <p class="muted" style="margin:0 0 10px;">No saved quizzes yet.</p>
-        <span style="font-size:12px; color:var(--text-muted);">Create questions and click "Save Current Deck" to store templates.</span>
+        <p class="muted" style="margin:0 0 10px;">No saved quizzes on your Mac yet.</p>
+        <span style="font-size:12px; color:var(--text-muted);">Create questions and click "Save Quiz to Mac" to store them on your laptop.</span>
       </div>
     `;
     return;
@@ -601,10 +653,13 @@ function renderLibraryList() {
   decks.forEach((deck) => {
     const item = document.createElement('div');
     item.className = 'library-item';
+    const dateLabel = deck.dateStr || (deck.updatedAt ? new Date(deck.updatedAt).toLocaleDateString() : 'Saved on Mac');
+    const qCount = deck.questionCount || (deck.questions ? deck.questions.length : 0);
+
     item.innerHTML = `
       <div>
         <div class="library-item-title">${deck.title}</div>
-        <div class="library-item-meta">${deck.questions.length} questions · Saved ${deck.date}</div>
+        <div class="library-item-meta">${qCount} questions · ${dateLabel}</div>
       </div>
       <div class="row" style="gap:8px;">
         <button type="button" class="btn" style="padding:6px 12px; font-size:12px;" data-load-id="${deck.id}">Load</button>
@@ -619,7 +674,7 @@ function renderLibraryList() {
       const deck = decks.find((d) => d.id === btn.dataset.loadId);
       if (deck) {
         document.getElementById('quizTitle').value = deck.title;
-        questions = deck.questions.map((q) => ({
+        questions = (deck.questions || []).map((q) => ({
           id: ++qid,
           type: q.type,
           text: q.text,
@@ -636,10 +691,11 @@ function renderLibraryList() {
   });
 
   libraryContainer.querySelectorAll('[data-delete-id]').forEach((btn) => {
-    btn.onclick = () => {
-      const remaining = decks.filter((d) => d.id !== btn.dataset.deleteId);
-      saveLibraryDecks(remaining);
-      renderLibraryList();
+    btn.onclick = async () => {
+      if (confirm('Delete this quiz file from your Mac?')) {
+        await deleteDeckFromDisk(btn.dataset.deleteId);
+        await renderLibraryList();
+      }
     };
   });
 }
@@ -652,31 +708,76 @@ document.getElementById('btnCloseLibrary').onclick = () => {
   libraryModal.style.display = 'none';
 };
 
-document.getElementById('btnSaveCurrentToLibrary').onclick = () => {
+document.getElementById('btnSaveCurrentToLibrary').onclick = async () => {
   if (questions.length === 0) {
-    alert('Please add at least one question before saving to the library.');
+    alert('Please add at least one question before saving to your Mac.');
     return;
   }
   const title = document.getElementById('quizTitle').value.trim() || 'Untitled Session';
-  const decks = getLibraryDecks();
-  const newDeck = {
-    id: `deck_${Date.now()}`,
-    title,
-    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    questions: questions.map((q) => ({
-      type: q.type,
-      text: q.text,
-      image: q.image,
-      isDoublePoints: !!q.isDoublePoints,
-      options: q.options,
-      correctIndex: q.correctIndex,
-      seconds: q.seconds,
-    })),
-  };
-  decks.unshift(newDeck);
-  saveLibraryDecks(decks);
-  renderLibraryList();
+  const saveBtn = document.getElementById('btnSaveCurrentToLibrary');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving to Mac…';
+
+  await saveDeckToDisk(title, questions);
+
+  saveBtn.disabled = false;
+  saveBtn.textContent = '💾 Save Quiz to Mac';
+  await renderLibraryList();
 };
+
+// ---------------------------------------------------------------------
+// Cloudflare Tunnel Live Status Polling & Link Copying
+// ---------------------------------------------------------------------
+let activePublicUrl = null;
+
+async function checkTunnelStatus() {
+  try {
+    const res = await fetch('/api/tunnel-status');
+    const data = await res.json();
+    const badge = document.getElementById('tunnelStatusBadge');
+    const text = document.getElementById('tunnelUrlText');
+
+    if (data.ok && data.active && data.url) {
+      const prevUrl = activePublicUrl;
+      activePublicUrl = data.url;
+      if (badge && text) {
+        badge.style.display = 'inline-flex';
+        try {
+          const u = new URL(data.url);
+          text.textContent = u.hostname;
+          text.title = data.url;
+        } catch (e) {
+          text.textContent = 'Public Online';
+        }
+      }
+      if (prevUrl !== activePublicUrl && typeof updateLobbyDisplay === 'function') {
+        updateLobbyDisplay();
+      }
+    } else {
+      if (badge) badge.style.display = 'none';
+    }
+  } catch (e) {}
+}
+
+const btnCopyLink = document.getElementById('btnCopyPublicLink');
+if (btnCopyLink) {
+  btnCopyLink.onclick = () => {
+    if (!activePublicUrl) return;
+    const playerUrl = `${activePublicUrl}/player.html`;
+    navigator.clipboard.writeText(playerUrl).then(() => {
+      const orig = btnCopyLink.textContent;
+      btnCopyLink.textContent = 'Copied!';
+      btnCopyLink.style.color = '#34D399';
+      setTimeout(() => {
+        btnCopyLink.textContent = orig;
+        btnCopyLink.style.color = '';
+      }, 2000);
+    });
+  };
+}
+
+checkTunnelStatus();
+setInterval(checkTunnelStatus, 8000);
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -734,36 +835,78 @@ document.getElementById('createGame').onclick = () => {
   });
 };
 
-function enterLobby(pin, ips, port) {
-  showScreen('lobby');
-  document.getElementById('lobbyPin').textContent = pin;
+let currentLobbyPin = null;
+let currentLobbyIps = [];
+let currentLobbyPort = 3001;
 
-  if (window.QuizAudio) window.QuizAudio.startLobbyMusic();
+function renderQrCode(container, text) {
+  if (!container) return;
+  container.innerHTML = '';
+  try {
+    if (typeof qrcode === 'function') {
+      const qr = qrcode(0, 'M');
+      qr.addData(text);
+      qr.make();
+      container.innerHTML = qr.createSvgTag(3.5, 4);
+      return;
+    }
+  } catch (e) {
+    console.error('QR code generation error:', e);
+  }
+}
 
-  const origin = window.location.origin;
-  const joinUrl = `${origin}/player.html?pin=${pin}`;
+function updateLobbyDisplay() {
+  if (!currentLobbyPin) return;
+  const pin = currentLobbyPin;
+  const ips = currentLobbyIps;
+  const port = currentLobbyPort;
+
+  let joinUrl = '';
+  if (activePublicUrl) {
+    joinUrl = `${activePublicUrl}/player.html?pin=${pin}`;
+  } else {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const hostIp = isLocal && ips.length > 0 ? ips[0] : window.location.hostname;
+    joinUrl = `${window.location.protocol}//${hostIp}:${port}/player.html?pin=${pin}`;
+  }
 
   const qrBox = document.getElementById('qrBox');
-  qrBox.innerHTML = '';
-  if (window.QRCode) {
-    new QRCode(qrBox, {
-      text: joinUrl,
-      width: 140,
-      height: 140,
-      colorDark: '#0B0F17',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M,
-    });
-  }
+  renderQrCode(qrBox, joinUrl);
 
   const urlsEl = document.getElementById('lobbyUrls');
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  if (isLocal) {
-    urlsEl.innerHTML = `Direct Link: <strong>${joinUrl}</strong><br><span style="font-size:13px; color:var(--text-muted);">Local Network: ` +
-      ips.map((ip) => `http://${ip}:${port}`).join(' · ') + '</span>';
-  } else {
-    urlsEl.innerHTML = `Direct Link: <strong>${joinUrl}</strong>`;
+  if (urlsEl) {
+    if (activePublicUrl) {
+      urlsEl.innerHTML = `
+        <div style="margin-bottom:8px;">
+          <span class="live-badge" style="font-size:11px; padding:3px 8px; margin-bottom:6px;">PUBLIC INTERNET ACTIVE</span><br>
+          <span style="font-size:13px; color:var(--text-muted);">Direct Player Link:</span><br>
+          <strong style="color:#38BDF8; font-size:14px; word-break:break-all;">${joinUrl}</strong>
+        </div>
+        <span style="font-size:12px; color:var(--text-muted);">
+          Scan QR code or open link from any phone worldwide.
+        </span>
+      `;
+    } else {
+      urlsEl.innerHTML = `
+        Direct Link: <strong>${joinUrl}</strong><br>
+        <span style="font-size:12px; color:var(--text-muted); display:inline-block; margin-top:4px;">
+          Local Wi-Fi Network · Cloudflare tunnel connecting…
+        </span>
+      `;
+    }
   }
+}
+
+function enterLobby(pin, ips, port) {
+  showScreen('lobby');
+  currentLobbyPin = pin;
+  currentLobbyIps = ips || [];
+  currentLobbyPort = port || 3001;
+
+  document.getElementById('lobbyPin').textContent = pin;
+  if (window.QuizAudio) window.QuizAudio.startLobbyMusic();
+
+  updateLobbyDisplay();
 }
 
 socket.on('lobby:update', (players) => {
@@ -940,7 +1083,8 @@ socket.on('question:show', (q) => {
       el.innerHTML = `<span class="opt-badge">${checkOrCross}</span><span>${text}</span>`;
     } else {
       el.className = `opt ${OPT_CLASSES[i]}`;
-      el.innerHTML = `<span class="opt-badge">${LETTERS[i]}</span><span>${text}</span>`;
+      const shapeSvg = window.Icons ? window.Icons.shape(i, 16) : LETTERS[i];
+      el.innerHTML = `<span class="opt-badge">${shapeSvg}</span><span>${text}</span>`;
     }
     grid.appendChild(el);
   });
@@ -993,8 +1137,9 @@ socket.on('question:reveal', ({ correctIndex, isDoublePoints, counts, leaderboar
         `;
       } else {
         el.className = `opt ${OPT_CLASSES[i]} ${isCorrect ? 'correct' : 'dimmed'}`;
+        const shapeSvg = window.Icons ? window.Icons.shape(i, 16) : LETTERS[i];
         el.innerHTML = `
-          <span class="opt-badge">${LETTERS[i]}</span>
+          <span class="opt-badge">${shapeSvg}</span>
           <span style="flex:1;">${text}</span>
           <span class="pill" style="font-weight:700;">${count} (${pct}%)</span>
         `;

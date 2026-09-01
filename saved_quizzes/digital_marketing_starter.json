@@ -1,0 +1,143 @@
+{
+  "id": "digital_marketing_starter",
+  "title": "Digital Marketing & Growth Trivia",
+  "dateStr": "Sep 1, 2026",
+  "updatedAt": 1788240000000,
+  "questionCount": 10,
+  "questions": [
+    {
+      "type": "mcq",
+      "text": "What does \"ROAS\" stand for in performance marketing?",
+      "image": null,
+      "isDoublePoints": false,
+      "options": [
+        { "text": "Return on Ad Spend" },
+        { "text": "Rate of Acquisition Scale" },
+        { "text": "Revenue over Annual Sales" },
+        { "text": "Reach of Audience Segment" }
+      ],
+      "correctIndex": 0,
+      "seconds": 20
+    },
+    {
+      "type": "mcq",
+      "text": "Which core metric is calculated by dividing total clicks by total ad impressions?",
+      "image": null,
+      "isDoublePoints": false,
+      "options": [
+        { "text": "Conversion Rate (CR)" },
+        { "text": "Click-Through Rate (CTR)" },
+        { "text": "Cost Per Mille (CPM)" },
+        { "text": "Bounce Rate" }
+      ],
+      "correctIndex": 1,
+      "seconds": 20
+    },
+    {
+      "type": "tf",
+      "text": "In SEO, a \"NoFollow\" rel attribute tells search engines not to pass PageRank to the destination URL.",
+      "image": null,
+      "isDoublePoints": false,
+      "options": [
+        { "text": "True" },
+        { "text": "False" }
+      ],
+      "correctIndex": 0,
+      "seconds": 15
+    },
+    {
+      "type": "mcq",
+      "text": "What is the primary function of a Meta (Facebook) \"Lookalike Audience\"?",
+      "image": null,
+      "isDoublePoints": false,
+      "options": [
+        { "text": "Target only current email newsletter subscribers" },
+        { "text": "Reach new prospects whose behaviors mirror your best customers" },
+        { "text": "Retarget users who abandoned their shopping carts" },
+        { "text": "Block competitor IP addresses from seeing your campaigns" }
+      ],
+      "correctIndex": 1,
+      "seconds": 20
+    },
+    {
+      "type": "mcq",
+      "text": "Which HTTP status code signifies a permanent redirect for SEO link equity transfer?",
+      "image": null,
+      "isDoublePoints": false,
+      "options": [
+        { "text": "301 Moved Permanently" },
+        { "text": "302 Found" },
+        { "text": "404 Not Found" },
+        { "text": "500 Server Error" }
+      ],
+      "correctIndex": 0,
+      "seconds": 20
+    },
+    {
+      "type": "tf",
+      "text": "Google Analytics 4 (GA4) utilizes an event-based tracking model instead of the session-based model of Universal Analytics.",
+      "image": null,
+      "isDoublePoints": false,
+      "options": [
+        { "text": "True" },
+        { "text": "False" }
+      ],
+      "correctIndex": 0,
+      "seconds": 15
+    },
+    {
+      "type": "mcq",
+      "text": "In marketing attribution, which model attributes 100% of conversion credit to the very first touchpoint?",
+      "image": null,
+      "isDoublePoints": false,
+      "options": [
+        { "text": "Last Touch" },
+        { "text": "First Touch" },
+        { "text": "Linear" },
+        { "text": "Time Decay" }
+      ],
+      "correctIndex": 1,
+      "seconds": 20
+    },
+    {
+      "type": "tf",
+      "text": "Implementing SPF and DKIM DNS records is essential for email authentication and maximizing inbox deliverability.",
+      "image": null,
+      "isDoublePoints": false,
+      "options": [
+        { "text": "True" },
+        { "text": "False" }
+      ],
+      "correctIndex": 0,
+      "seconds": 15
+    },
+    {
+      "type": "mcq",
+      "text": "What does \"CAC\" stand for in growth marketing unit economics?",
+      "image": null,
+      "isDoublePoints": false,
+      "options": [
+        { "text": "Customer Acquisition Cost" },
+        { "text": "Cumulative Audience Count" },
+        { "text": "Churn After Conversion" },
+        { "text": "Channel Attribution Coefficient" }
+      ],
+      "correctIndex": 0,
+      "seconds": 20
+    },
+    {
+      "type": "mcq",
+      "text": "In Conversion Rate Optimization (CRO), what characterizes an \"A/B/n test\"?",
+      "image": null,
+      "isDoublePoints": true,
+      "options": [
+        { "text": "A multivariate test limited strictly to 2 variations" },
+        { "text": "A split test evaluating multiple variations (A, B, C, D...) against a control" },
+        { "text": "A test conducted exclusively on desktop users" },
+        { "text": "An organic SEO split test for title tags" }
+      ],
+      "correctIndex": 1,
+      "seconds": 20
+    }
+  ]
+}
