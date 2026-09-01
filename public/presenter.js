@@ -480,8 +480,9 @@
   // ---------------------------------------------------------------------
   // Step 1: Kahoot Vertical Bar Graph Snapshot
   // ---------------------------------------------------------------------
-  function renderRevealScreen({ question, correctIndex, isDoublePoints, counts, leaderboard }) {
+  function renderRevealScreen(data = {}) {
     if (hostTimerRaf) cancelAnimationFrame(hostTimerRaf);
+    const { question, correctIndex, isDoublePoints, counts, leaderboard } = data || {};
     if (question) {
       currentQuestionMeta = question;
       currentQuestionIndex = question.index;
@@ -494,9 +495,9 @@
 
     if (window.QuizAudio) window.QuizAudio.stopQuestionMusic();
 
-    const q = currentQuestionMeta;
+    const q = currentQuestionMeta || {};
     const qTextEl = document.getElementById('revealQText');
-    if (qTextEl) qTextEl.textContent = q ? (q.text || '') : '';
+    if (qTextEl) qTextEl.textContent = q.text || 'Question Results';
 
     const badge2x = document.getElementById('reveal2xBadge');
     if (badge2x) {
@@ -508,10 +509,10 @@
     container.innerHTML = '';
 
     const options = (q && Array.isArray(q.options) && q.options.length) 
-      ? q.options.map((o) => (typeof o === 'string' ? o : (o.text || '')))
+      ? q.options.map((o) => (typeof o === 'string' ? o : (o ? (o.text || '') : '')))
       : ['Option 1', 'Option 2', 'Option 3', 'Option 4'];
 
-    const isTf = q ? q.type === 'tf' : false;
+    const isTf = q.type === 'tf';
     const wrapper = document.createElement('div');
     wrapper.className = 'kahoot-bars-wrapper';
 
@@ -550,7 +551,7 @@
       const fill = document.createElement('div');
       const optClass = isTf ? (i === 0 ? 'tf-true' : 'tf-false') : OPT_CLASSES[i];
       fill.className = `kahoot-bar-fill ${optClass}`;
-      fill.style.height = '0%'; // Start at 0, animate after DOM append
+      fill.style.height = `${fillHeightPct}%`;
 
       track.appendChild(fill);
       fillTargets.push({ fill, fillHeightPct });
@@ -574,12 +575,9 @@
     wrapper.appendChild(grid);
     container.appendChild(wrapper);
 
-    // Animate bars AFTER DOM is appended — two rAF frames ensures layout is flushed
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        fillTargets.forEach(({ fill, fillHeightPct }) => {
-          fill.style.height = `${fillHeightPct}%`;
-        });
+      fillTargets.forEach(({ fill, fillHeightPct }) => {
+        fill.style.height = `${fillHeightPct}%`;
       });
     });
 

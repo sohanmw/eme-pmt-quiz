@@ -342,7 +342,7 @@ function currentQuestionPayload(game) {
     text: q.text,
     image: q.image || null,
     isDoublePoints: !!q.isDoublePoints,
-    options: q.options.map((o) => o.text),
+    options: (q.options || []).map((o) => (typeof o === 'string' ? o : (o ? (o.text || '') : ''))),
     limitMs: game.remainingMs !== undefined ? game.remainingMs : q.limitMs,
     totalLimitMs: game.totalLimitMs || q.limitMs,
     timerPaused: !!game.timerPaused,
